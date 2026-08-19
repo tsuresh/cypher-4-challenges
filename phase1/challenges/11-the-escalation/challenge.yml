@@ -1,0 +1,38 @@
+name: "The Escalation"
+author: SCTF
+category: IAM Privilege Escalation
+description: |
+  Ape Ride leaked a low-privilege service account key. On its own it can barely
+  do anything — but it's allowed to *act as* a more powerful identity, and that
+  identity holds the crown jewels.
+
+  Start from the leaked key, find the higher identity you can become, switch to
+  it, and read the protected secret. Two steps, no more.
+
+value: 300
+type: dynamic
+extra:
+  initial: 300
+  minimum: 120
+  decay: 8
+
+connection_info: __CONNECT__
+
+files:
+  - aperide-lowpriv-sa-key.json
+
+flags:
+  - __FLAG__
+
+hints:
+  - content: "Activate the low-priv key. List service accounts and read the IAM policy of each (gcloud iam service-accounts get-iam-policy …) to find the one you have Token Creator on. Then read the secret with --impersonate-service-account."
+    cost: 0
+
+tags:
+  - cloud
+  - iam
+  - privilege-escalation
+  - hard
+
+state: visible
+version: "0.1"

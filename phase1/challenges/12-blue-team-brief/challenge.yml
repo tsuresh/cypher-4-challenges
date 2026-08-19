@@ -1,0 +1,33 @@
+name: "Blue Team Brief"
+author: SCTF
+category: Written Remediation (Bonus)
+description: |
+  You've seen how these companies got breached. Now think like the defender.
+
+  Pick ANY challenge you solved and write **three sentences** on how that company
+  should have prevented it. Submit your brief in the flag field below.
+
+  Any genuine, on-topic brief (40+ characters) scores the bonus automatically.
+  The SCTF panel reads every submission and uses brief quality as a secondary
+  tie-break, so make your three sentences count.
+
+value: 100
+type: standard
+
+# Regex flag: accept any substantial free-text submission. The stored submission
+# text is what the panel reviews for the tie-break (see phase1/review-briefs.sh).
+flags:
+  - type: regex
+    content: "(?s).{40,}"
+
+hints:
+  - content: "Pick any challenge above and write three sentences on how the company should have prevented it. Name the control (e.g. 'block egress to the metadata IP')."
+    cost: 0
+
+tags:
+  - blue-team
+  - written
+  - bonus
+
+state: visible
+version: "0.1"

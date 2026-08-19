@@ -1,0 +1,12 @@
+# kind cluster for challenge 09 — single node, runs locally ON the VM (no GKE).
+# Maps the dashboard NodePort (30009) to host port 8009 so teams can browse it.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: cypher09
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30009
+        hostPort: 8009
+        listenAddress: "0.0.0.0"
+        protocol: TCP

@@ -1,0 +1,27 @@
+# Secrets & local config — never commit
+.env
+*.env.local
+*.key.json
+*-sa-key.json
+service-account-*.json
+secrets/
+*.pem
+
+# CTFd runtime state
+shared/ctfd-base/.data/
+phase1/.data/
+phase2/.data/
+
+# Generated flags & provisioning state (created at run time)
+.state/
+**/.flag
+**/generated-flag.txt
+
+# Editor / OS noise
+.DS_Store
+*.swp
+*.swo
+__pycache__/
+*.pyc
+.venv/
+node_modules/

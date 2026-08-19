@@ -1,0 +1,37 @@
+name: "Metadata Mischief"
+author: SCTF
+category: SSRF / Cloud Metadata
+description: |
+  Ape Ride's support tool previews a driver's uploaded document by fetching a
+  URL you give it — server-side. It doesn't check where that URL points.
+
+  Cloud servers expose an internal metadata service. If the app fetches URLs for
+  you, you can make it fetch something it shouldn't. This is the exact technique
+  from the 20 Aug technical session.
+
+  Connect: __CONNECT__
+
+value: 150
+type: dynamic
+extra:
+  initial: 150
+  minimum: 50
+  decay: 15
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+hints:
+  - content: "Cloud servers expose an internal address at 169.254.169.254. If the app fetches URLs for you, point it there. The flag lives at /computeMetadata/v1/instance/attributes/cypher-flag-04."
+    cost: 0
+
+tags:
+  - ssrf
+  - cloud
+  - metadata
+  - medium
+
+state: visible
+version: "0.1"

@@ -1,0 +1,28 @@
+name: "Practice Range"
+author: SCTF
+category: Warm-up
+description: |
+  Welcome to CYPHER 4.0. This is a warm-up so you can see how flags work.
+
+  Flags always look like CYPHER{...}. Submit the flag below exactly as shown to
+  score your first points:
+
+      CYPHER{welcome_to_cypher}
+
+value: 10
+type: standard
+
+# This flag is intentionally public (it's in the description). No secret to inject.
+flags:
+  - CYPHER{welcome_to_cypher}
+
+hints:
+  - content: "Submit CYPHER{welcome_to_cypher} to learn how flag submission works."
+    cost: 0
+
+tags:
+  - warmup
+  - trivial
+
+state: visible
+version: "0.1"

@@ -1,0 +1,36 @@
+name: "Peering Into the Cluster"
+author: SCTF
+category: Kubernetes
+description: |
+  Ape Ride's dispatch team runs a Kubernetes cluster, and its admin dashboard is
+  reachable without a login. Whoever set it up let the dashboard read far more
+  than it should.
+
+  Browse to the dashboard, skip the login, and read the secret the cluster is
+  storing.
+
+  Connect: __CONNECT__
+
+value: 175
+type: dynamic
+extra:
+  initial: 175
+  minimum: 60
+  decay: 15
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+hints:
+  - content: "A cluster dashboard is reachable without a login. Open it, click Skip, then browse to Secrets in the 'aperide' namespace and read (base64-decode) the value."
+    cost: 0
+
+tags:
+  - kubernetes
+  - rbac
+  - medium
+
+state: visible
+version: "0.1"

@@ -1,0 +1,36 @@
+name: "The Careless Container"
+author: SCTF
+category: Container Exposure
+description: |
+  Ceylon Kade left a container-management port open to the internet. Anyone who
+  can reach it can ask the daemon what's running — and read a running container's
+  environment.
+
+  List the containers, inspect the inventory service, and read the flag from its
+  environment. (You do not need to escape anything for this one.)
+
+  Connect: __CONNECT__  (Docker Engine API, unauthenticated)
+
+value: 200
+type: dynamic
+extra:
+  initial: 200
+  minimum: 60
+  decay: 12
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+hints:
+  - content: "A container management port is open. Point the Docker CLI at it (DOCKER_HOST=tcp://host:8008 docker ps), then inspect the running container's environment (docker inspect)."
+    cost: 0
+
+tags:
+  - container
+  - docker
+  - medium
+
+state: visible
+version: "0.1"

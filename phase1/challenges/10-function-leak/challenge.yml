@@ -1,0 +1,34 @@
+name: "Function Leak"
+author: SCTF
+category: Serverless
+description: |
+  Ruhunu Bank shipped a little serverless "greeting" function. It trusts its
+  input a bit too much and lets you control how the greeting is rendered.
+
+  Send it something that makes it print its own environment.
+
+  Connect: __CONNECT__
+
+value: 150
+type: dynamic
+extra:
+  initial: 150
+  minimum: 50
+  decay: 15
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+hints:
+  - content: "The function trusts its input. It renders a template you supply. Try making the template print the environment: ?template={env}"
+    cost: 0
+
+tags:
+  - serverless
+  - injection
+  - medium
+
+state: visible
+version: "0.1"

@@ -1,0 +1,114 @@
+# phase1/docker-compose.yml — self-contained Phase 1 stack: CTFd + proxy +
+# container-backed challenges. Run from this directory so relative paths resolve:
+#   docker compose --env-file ../.env up -d --build
+#
+# GCP-native challenges (01, 06, 07, 10, 11) are created by provision.sh via
+# gcloud. Kubernetes (09) uses kind, also driven by provision.sh.
+services:
+
+  # ---- CTFd platform -------------------------------------------------------
+  ctfd:
+    image: ctfd/ctfd:3.7.5
+    restart: unless-stopped
+    environment:
+      - UPLOAD_FOLDER=/var/uploads
+      - DATABASE_URL=mysql+pymysql://ctfd:${CTFD_DB_PASSWORD:-ctfd}@db/ctfd
+      - REDIS_URL=redis://cache:6379
+      - WORKERS=3
+      - REVERSE_PROXY=true
+      - FIRST_BLOOD_BONUS=${FIRST_BLOOD_BONUS:-50}
+    ports:
+      - "127.0.0.1:8000:8000"     # local-only, for admin bootstrap (not world-exposed)
+    volumes:
+      - ctfd_uploads:/var/uploads
+      - ctfd_logs:/var/log/CTFd
+      - ../shared/ctfd-base/plugins/first_blood:/opt/CTFd/CTFd/plugins/first_blood:ro
+    depends_on: [db, cache]
+    networks: [cypher]
+
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    environment:
+      - MARIADB_ROOT_PASSWORD=${CTFD_DB_ROOT_PASSWORD:-root}
+      - MARIADB_USER=ctfd
+      - MARIADB_PASSWORD=${CTFD_DB_PASSWORD:-ctfd}
+      - MARIADB_DATABASE=ctfd
+    command: [mysqld, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci,
+              --wait_timeout=28800, --log-warnings=0]
+    volumes: [ctfd_db:/var/lib/mysql]
+    networks: [cypher]
+
+  cache:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes: [ctfd_redis:/data]
+    networks: [cypher]
+
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      - BASE_DOMAIN=${BASE_DOMAIN}
+      - ACME_EMAIL=${ALERT_EMAIL}
+    volumes:
+      - ../shared/proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [ctfd]
+    networks: [cypher]
+
+  # ---- Container-backed challenges ----------------------------------------
+  c02-leaked-ledger:
+    build: ./challenges/02-leaked-ledger
+    restart: unless-stopped
+    environment:
+      - "CHAL_FLAG=${FLAG_02:-CYPHER{placeholder}}"
+    ports: ["8002:80"]
+    networks: [cypher]
+
+  c03-forgotten-backup:
+    build: ./challenges/03-forgotten-backup
+    restart: unless-stopped
+    environment:
+      - "CHAL_FLAG=${FLAG_03:-CYPHER{placeholder}}"
+    ports: ["8003:80"]
+    networks: [cypher]
+
+  c04-metadata-mischief:
+    build: ./challenges/04-metadata-mischief
+    restart: unless-stopped
+    # Reaches the real GCE metadata server; flag is a custom metadata attribute.
+    ports: ["8004:8000"]
+    networks: [cypher]
+
+  c05-git-happens:
+    build: ./challenges/05-git-happens
+    restart: unless-stopped
+    environment:
+      - "CHAL_FLAG=${FLAG_05:-CYPHER{placeholder}}"
+    ports: ["8005:80"]
+    networks: [cypher]
+
+  # 08 — exposed Docker API inside an isolated Docker-in-Docker sandbox.
+  c08-dind:
+    image: docker:26-dind
+    restart: unless-stopped
+    privileged: true                 # required for DinD; isolated from the host
+    environment: [DOCKER_TLS_CERTDIR=]
+    command: [dockerd, --host=tcp://0.0.0.0:2375, --host=unix:///var/run/docker.sock]
+    ports: ["8008:2375"]
+    networks: [cypher]
+
+volumes:
+  ctfd_uploads:
+  ctfd_logs:
+  ctfd_db:
+  ctfd_redis:
+  caddy_data:
+  caddy_config:
+
+networks:
+  cypher:
+    name: cypher

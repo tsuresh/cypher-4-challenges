@@ -1,0 +1,35 @@
+name: "The Open Warehouse"
+author: SCTF
+category: Cloud Storage / Recon
+description: |
+  Ceylon Kade, a tea exporter, moved its warehouse catalogue to cloud storage and
+  left the bucket open to the world. Open buckets can be listed by anyone.
+
+  List the bucket's contents, find the note that shouldn't be there, and read the flag.
+
+  Bucket: __CONNECT__
+
+value: 75
+type: dynamic
+extra:
+  initial: 75
+  minimum: 25
+  decay: 25
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+hints:
+  - content: "Open storage buckets can be listed by anyone. The gsutil tool lists and downloads bucket contents: gsutil ls -r gs://<bucket> then gsutil cat."
+    cost: 0
+
+tags:
+  - cloud
+  - storage
+  - recon
+  - easy
+
+state: visible
+version: "0.1"

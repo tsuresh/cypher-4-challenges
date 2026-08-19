@@ -1,0 +1,30 @@
+# shared/proxy/Caddyfile — automatic TLS reverse proxy for CTFd.
+# Env vars are injected by docker-compose ({$VAR} is Caddy env interpolation).
+#
+# Phase 1: only the CTFd vhost is used.
+# Phase 2: the wildcard vhost is enabled only when WHALE_ROUTE_MODE=subdomain,
+#          routing *.BASE_DOMAIN to the frp edge for per-team instances.
+
+{
+	email {$ACME_EMAIL}
+	# For local/dev without public DNS, uncomment to use internal CA:
+	# local_certs
+}
+
+ctfd.{$BASE_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy ctfd:8000
+	header {
+		# CTFd sets its own; add sane transport defaults.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+}
+
+# Optional big-screen board (Phase 2 / finals only). Left commented so Phase 1
+# does not attempt a certificate for a host that has no DNS and no `display`
+# service. Uncomment in the finals environment once leaderboard/display exists.
+# board.{$BASE_DOMAIN} {
+# 	encode zstd gzip
+# 	reverse_proxy display:80
+# }

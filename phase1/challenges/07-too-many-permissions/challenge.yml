@@ -1,0 +1,37 @@
+name: "Too Many Permissions"
+author: SCTF
+category: Cloud IAM
+description: |
+  Ruhunu Bank handed its analytics job a service account "just to be safe". The
+  credentials you've been given can do more than they should.
+
+  Use the attached key, list what your identity is allowed to do, then read the
+  secret it can reach.
+
+value: 150
+type: dynamic
+extra:
+  initial: 150
+  minimum: 50
+  decay: 15
+
+connection_info: __CONNECT__
+
+files:
+  - ruhunu-analyst-sa-key.json
+
+flags:
+  - __FLAG__
+
+hints:
+  - content: "Activate the key (gcloud auth activate-service-account --key-file=…). Then check what you can do and read the secret: gcloud secrets versions access latest --secret=ruhunu-analytics-flag."
+    cost: 0
+
+tags:
+  - cloud
+  - iam
+  - secret-manager
+  - medium
+
+state: visible
+version: "0.1"

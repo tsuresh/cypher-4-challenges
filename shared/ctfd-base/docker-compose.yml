@@ -1,0 +1,81 @@
+# shared/ctfd-base/docker-compose.yml
+# Canonical CTFd stack (CTFd + MariaDB + Redis + Caddy). Phase compose files
+# include this via `-f` merge and add their own challenge services.
+#
+# Bring up standalone (for a smoke test):
+#   docker compose --env-file ../../.env -f docker-compose.yml up -d
+services:
+  ctfd:
+    image: ctfd/ctfd:3.7.5
+    restart: unless-stopped
+    environment:
+      - UPLOAD_FOLDER=/var/uploads
+      - DATABASE_URL=mysql+pymysql://ctfd:${CTFD_DB_PASSWORD:-ctfd}@db/ctfd
+      - REDIS_URL=redis://cache:6379
+      - WORKERS=3
+      - LOG_FOLDER=/var/log/CTFd
+      - ACCESS_LOG=-
+      - ERROR_LOG=-
+      - REVERSE_PROXY=true
+      # First-blood bonus, configured by the plugin (see plugins/first_blood).
+      - FIRST_BLOOD_BONUS=${FIRST_BLOOD_BONUS:-50}
+    volumes:
+      - ctfd_uploads:/var/uploads
+      - ctfd_logs:/var/log/CTFd
+      - ./plugins/first_blood:/opt/CTFd/CTFd/plugins/first_blood:ro
+      - ./theme:/opt/CTFd/CTFd/themes/cypher:ro
+    depends_on:
+      - db
+      - cache
+    networks: [cypher]
+
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    environment:
+      - MARIADB_ROOT_PASSWORD=${CTFD_DB_ROOT_PASSWORD:-root}
+      - MARIADB_USER=ctfd
+      - MARIADB_PASSWORD=${CTFD_DB_PASSWORD:-ctfd}
+      - MARIADB_DATABASE=ctfd
+    command:
+      [ mysqld, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci,
+        --wait_timeout=28800, --log-warnings=0 ]
+    volumes:
+      - ctfd_db:/var/lib/mysql
+    networks: [cypher]
+
+  cache:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - ctfd_redis:/data
+    networks: [cypher]
+
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - BASE_DOMAIN=${BASE_DOMAIN}
+      - ACME_EMAIL=${ALERT_EMAIL}
+    volumes:
+      - ../proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - ctfd
+    networks: [cypher]
+
+volumes:
+  ctfd_uploads:
+  ctfd_logs:
+  ctfd_db:
+  ctfd_redis:
+  caddy_data:
+  caddy_config:
+
+networks:
+  cypher:
+    name: cypher

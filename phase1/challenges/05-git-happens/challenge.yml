@@ -1,0 +1,35 @@
+name: "Git Happens"
+author: SCTF
+category: Web / Source Disclosure
+description: |
+  Pearl Telecom deploys its developer portal straight from a git repository —
+  and the whole .git directory shipped to production along with the site.
+
+  A secret was committed once and "removed" later. Git never forgets.
+
+  Connect: __CONNECT__
+
+value: 100
+type: dynamic
+extra:
+  initial: 100
+  minimum: 30
+  decay: 20
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+hints:
+  - content: "A .git folder left on a web server lets you rebuild the source and its history. Dump it (e.g. git-dumper) and read the log: git log -p."
+    cost: 0
+
+tags:
+  - web
+  - git
+  - source-disclosure
+  - easy
+
+state: visible
+version: "0.1"

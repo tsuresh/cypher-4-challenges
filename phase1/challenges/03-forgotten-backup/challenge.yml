@@ -1,0 +1,35 @@
+name: "The Forgotten Backup"
+author: SCTF
+category: Web / Recon
+description: |
+  Pearl Telecom's self-care portal gets snapshotted every night "just in case",
+  and one of those snapshots never got cleaned up. Backups tend to have
+  predictable names and predictable homes.
+
+  Find the leftover backup and read the flag from it.
+
+  Connect: __CONNECT__
+
+value: 100
+type: dynamic
+extra:
+  initial: 100
+  minimum: 30
+  decay: 20
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+hints:
+  - content: "Old backups get left behind with predictable names. Guess common backup filenames and paths (backup.sql, db_backup.sql, site-backup.zip, a /backups/ folder)."
+    cost: 0
+
+tags:
+  - web
+  - recon
+  - easy
+
+state: visible
+version: "0.1"

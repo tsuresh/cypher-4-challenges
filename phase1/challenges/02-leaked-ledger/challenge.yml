@@ -1,0 +1,35 @@
+name: "Leaked Ledger"
+author: SCTF
+category: Web / Secrets Exposure
+description: |
+  Highland Leaf, a tea exporter in Nuwara Eliya, moved its ledger portal to the
+  cloud in a hurry. The app loads its settings from a local configuration file —
+  and that file is sitting in the web root.
+
+  Find the configuration file the site is accidentally serving and read the flag.
+
+  Connect: __CONNECT__
+
+value: 75
+type: dynamic
+extra:
+  initial: 75
+  minimum: 25
+  decay: 20
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+hints:
+  - content: "Config files like .env are sometimes left reachable. Try requesting it directly in the browser."
+    cost: 0
+
+tags:
+  - web
+  - recon
+  - easy
+
+state: visible
+version: "0.1"

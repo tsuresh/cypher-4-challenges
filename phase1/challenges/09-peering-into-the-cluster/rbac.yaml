@@ -1,0 +1,29 @@
+# The misconfiguration: the Kubernetes Dashboard's service account is granted
+# cluster-wide read on Secrets. Combined with --enable-skip-login, ANYONE who
+# opens the dashboard and clicks "Skip" inherits these permissions and can read
+# every Secret — including the flag. (A correct setup binds the dashboard SA to
+# a minimal, namespaced, non-secret-reading role and disables skip-login.)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dashboard-oversharing
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["namespaces", "pods", "services", "nodes"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dashboard-oversharing-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dashboard-oversharing
+subjects:
+  - kind: ServiceAccount
+    name: kubernetes-dashboard
+    namespace: kubernetes-dashboard

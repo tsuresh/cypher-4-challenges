@@ -1,0 +1,10 @@
+# shared/ctfcli/config — ctfcli project config (INI format).
+# The CTFd URL and access token are injected from the environment by
+# shared/ctfcli/sync.sh so no secrets live in git.
+[config]
+url =
+access_token =
+
+[challenges]
+# Managed by `ctfcli challenge add` / sync.sh. Listed here for reference only;
+# sync.sh installs every challenge.yml found under the active phase.
