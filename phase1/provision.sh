@@ -18,7 +18,9 @@ load_env
 source "$REPO_ROOT/shared/lib/flags.sh"
 source "$REPO_ROOT/shared/lib/gcp.sh"
 source "$REPO_ROOT/shared/lib/render.sh"
-require docker gcloud gsutil ctfcli python3 curl
+# Prefer a project venv (ctfcli/requests) if one exists.
+[[ -d "$REPO_ROOT/.venv" ]] && PATH="$REPO_ROOT/.venv/bin:$PATH"
+require docker gcloud gsutil ctf python3 curl   # ctfcli installs its CLI as `ctf`
 
 CH="$REPO_ROOT/phase1/challenges"
 export PHASE1_VM="${PHASE1_VM:-cypher-phase1}"

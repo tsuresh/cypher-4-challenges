@@ -59,7 +59,7 @@ On your workstation (for bootstrap) and on the VM (for provisioning):
 |---|---|
 | `gcloud`, `gsutil` | all GCP provisioning |
 | `docker`, `docker compose` | CTFd + container challenges |
-| `ctfcli` | loading challenges as code (`pip install ctfcli`) |
+| `ctfcli` | loading challenges as code (`pip install ctfcli`; the CLI command is `ctf`) |
 | `python3` + `requests` | CTFd API bootstrap (`pip install requests`) |
 | `kind`, `kubectl` | challenge 09 (installed on the VM by `vm-startup.sh`) |
 | `curl`, `git` | healthchecks & helpers |

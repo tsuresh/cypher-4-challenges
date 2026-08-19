@@ -10,7 +10,7 @@
 
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/shared/lib/common.sh"
 load_env
-require ctfcli
+require ctf     # ctfcli installs its CLI as `ctf`
 
 PHASE="${1:?usage: sync.sh <phase1|phase2>}"
 : "${CTFD_URL:?CTFD_URL must be set (phase provision.sh exports it)}"
@@ -32,6 +32,8 @@ if [[ ! -f .ctf/config ]]; then
 [config]
 url = ${CTFD_URL}
 access_token = ${CTFD_ADMIN_TOKEN}
+
+[challenges]
 EOF
 fi
 
@@ -41,10 +43,10 @@ for root in "${ROOTS[@]}"; do
     dir="$(dirname "$yml")"
     name="$(basename "$dir")"
     step "Syncing challenge: $name"
-    if ctfcli challenge install "$dir" >/dev/null 2>&1; then
+    if ctf challenge install "$dir" >/dev/null 2>&1; then
       ok "installed $name"
     else
-      ctfcli challenge sync "$dir" && ok "synced $name" || err "failed: $name"
+      ctf challenge sync "$dir" && ok "synced $name" || err "failed: $name"
     fi
     count=$((count+1))
   done < <(find "$root" -name challenge.yml -print0 | sort -z)

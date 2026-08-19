@@ -17,7 +17,7 @@ source "$REPO_ROOT/shared/lib/render.sh"
 
 # Prefer the project venv's ctfcli/python if present.
 [[ -d "$REPO_ROOT/.venv" ]] && PATH="$REPO_ROOT/.venv/bin:$PATH"
-require docker ctfcli
+require docker ctf     # ctfcli installs its CLI as `ctf`
 PY="$(command -v python3)"; [[ -x "$REPO_ROOT/.venv/bin/python" ]] && PY="$REPO_ROOT/.venv/bin/python"
 
 CH="$REPO_ROOT/phase1/challenges"
@@ -69,6 +69,8 @@ cat > "$REPO_ROOT/.ctf/config" <<EOF
 [config]
 url = ${CTFD_URL}
 access_token = ${CTFD_ADMIN_TOKEN}
+
+[challenges]
 EOF
 
 # --- 08 inner flag container inside the DinD sandbox -----------------------

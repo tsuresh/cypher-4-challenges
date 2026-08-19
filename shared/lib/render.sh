@@ -32,14 +32,23 @@ render_challenge() {
   printf '%s' "$dest"
 }
 
-# ctfcli_install <rendered_dir> — install/update a single challenge in CTFd
+# ctfcli_install <rendered_dir> — install/update a single challenge in CTFd.
+# NOTE: the ctfcli command-line tool is `ctf`. It reads .ctf/config from the CWD,
+# which we (re)write here so both provision.sh and provision-local.sh work.
 ctfcli_install() {
   local dir="$1"
   : "${CTFD_URL:?CTFD_URL not set}"; : "${CTFD_ADMIN_TOKEN:?CTFD_ADMIN_TOKEN not set}"
+  mkdir -p "$REPO_ROOT/.ctf"
+  cat > "$REPO_ROOT/.ctf/config" <<EOF
+[config]
+url = ${CTFD_URL}
+access_token = ${CTFD_ADMIN_TOKEN}
+
+[challenges]
+EOF
   ( cd "$REPO_ROOT"
-    export CTFCLI_URL="$CTFD_URL" CTFCLI_ACCESS_TOKEN="$CTFD_ADMIN_TOKEN"
-    if ! ctfcli challenge install "$dir" >/dev/null 2>&1; then
-      ctfcli challenge sync "$dir" >/dev/null
+    if ! ctf challenge install "$dir" >/dev/null 2>&1; then
+      ctf challenge sync "$dir" >/dev/null
     fi
   )
 }
