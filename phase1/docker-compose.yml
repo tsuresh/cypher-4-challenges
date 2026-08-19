@@ -15,6 +15,9 @@ services:
       - DATABASE_URL=mysql+pymysql://ctfd:${CTFD_DB_PASSWORD:-ctfd}@db/ctfd
       - REDIS_URL=redis://cache:6379
       - WORKERS=3
+      # REQUIRED with >1 worker: a stable session secret shared across workers.
+      # provision.sh generates & persists one; for manual `up`, set it in .env.
+      - SECRET_KEY=${CTFD_SECRET_KEY:-}
       - REVERSE_PROXY=true
       - FIRST_BLOOD_BONUS=${FIRST_BLOOD_BONUS:-50}
     ports:

@@ -44,6 +44,15 @@ FLAG_10="$(gen_flag functionleak)"
 FLAG_11="$(gen_flag escalation)"
 
 # --- 2. CTFd + container challenges ----------------------------------------
+# Ensure a stable CTFd session secret (required with >1 worker). Generate once
+# and persist so re-runs don't invalidate live sessions.
+if [[ -z "${CTFD_SECRET_KEY:-}" ]]; then
+  _sk="$(state_dir)/ctfd_secret_key"
+  [[ -f "$_sk" ]] || { random_token 32 > "$_sk"; chmod 600 "$_sk"; }
+  export CTFD_SECRET_KEY="$(cat "$_sk")"
+  log "Using CTFd SECRET_KEY from $_sk"
+fi
+
 step "Bringing up CTFd + container challenges (docker compose)"
 ( cd "$REPO_ROOT/phase1"
   docker compose --env-file "$REPO_ROOT/.env" up -d --build )

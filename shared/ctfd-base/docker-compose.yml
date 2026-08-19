@@ -13,6 +13,8 @@ services:
       - DATABASE_URL=mysql+pymysql://ctfd:${CTFD_DB_PASSWORD:-ctfd}@db/ctfd
       - REDIS_URL=redis://cache:6379
       - WORKERS=3
+      # REQUIRED with >1 worker: a stable session secret shared across workers.
+      - SECRET_KEY=${CTFD_SECRET_KEY:-}
       - LOG_FOLDER=/var/log/CTFd
       - ACCESS_LOG=-
       - ERROR_LOG=-
