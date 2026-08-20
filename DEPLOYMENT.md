@@ -307,33 +307,42 @@ Every flag that was actually installed is recorded in `.state/flags.csv`
 
 ## 6. Verify every solve path
 
-Verification splits the same way provisioning does. `verify.sh` runs **all**
-healthchecks, but four of them need project credentials or the generated SA keys,
-which by design do not exist on the VM — so on a hardened VM it will always
-report 01, 07, 10 and 11 as failures. That is expected, not breakage.
+The healthchecks are not all runnable in one place, so verification splits the
+same way provisioning does. `verify.sh` detects which plane it is on and
+**defers** what it cannot check instead of calling it a failure:
 
-**On the VM** — covers the container and kind challenges (02, 03, 04, 05, 06, 08, 09):
+| Group | Challenges | Runs on |
+|---|---|---|
+| data plane (localhost ports) | 02, 03, 04, 05, 08, 09 | the VM |
+| control plane (creds / SA keys) | 01, 07, 10, 11 | the admin host |
+| either (anonymous HTTPS) | 06 | both |
+| no infrastructure | 00, 12 | skipped |
+
+Run it in **both** places — neither run alone is full coverage, and the script
+says so:
+
 ```sh
-./phase1/verify.sh          # expect: 7 passed, 4 failed, 2 skipped
-```
-The 2 skipped are 00 and 12, which have no infrastructure.
+# on cypher-phase1   -> 7 passed, 0 failed, 2 skipped, 4 deferred
+./phase1/verify.sh
 
-**On the admin host** — the four the VM cannot check. 07 and 11 read the SA keys
-written into their challenge directories at provision time, and 01/10 need
-project credentials:
-```sh
-set -a; . ./.env; set +a
-for c in 01-open-warehouse 07-too-many-permissions 10-function-leak 11-the-escalation; do
-  printf '%-32s ' "$c"
-  bash "phase1/challenges/$c/healthcheck.sh" >/dev/null 2>&1 && echo PASS || echo FAIL
-done
+# on the admin host  -> 5 passed, 0 failed, 2 skipped, 6 deferred
+./phase1/verify.sh
 ```
-07 and 11 also assert the **negative** case — that each SA cannot exceed its
-scope, and that 11's flag is unreachable without impersonation. Those warnings
-are the least-privilege guarantee; treat any of them as a release blocker.
 
-Together the two runs must account for all 13. Then confirm a flag actually
-registers by submitting one on the public scoreboard.
+Between them all 13 are accounted for. A non-zero exit means a real failure; a
+`deferred` line never does.
+
+> Plane detection: project credentials via `gcloud projects describe`, and the
+> challenge VM via `/opt/cypher/.startup-done` (written by `vm-startup.sh`). The
+> VM check is deliberately not a bare port probe — on the VM a stopped stack must
+> report FAIL, not "deferred".
+
+07 and 11 also assert the **negative** case: that each SA cannot exceed its
+scope, and that 11's secret is unreachable without impersonation. Those warnings
+are the least-privilege guarantee — treat any of them as a release blocker.
+
+Finally, confirm scoring end-to-end by submitting one real flag on the public
+scoreboard.
 
 ---
 

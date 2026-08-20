@@ -21,7 +21,11 @@ DOCKER_HOST="$DIND_API" docker info >/dev/null 2>&1 || die "DinD Docker API not 
 
 step "08: launching inner inventory container with the flag in its environment"
 DOCKER_HOST="$DIND_API" docker rm -f ceylon-inventory >/dev/null 2>&1 || true
+# --restart unless-stopped: without it a host reboot leaves this container in
+# Exited state. The DinD daemon and port 8008 come back, so the challenge LOOKS
+# healthy, but `docker ps` (the intended solve) lists nothing.
 DOCKER_HOST="$DIND_API" docker run -d --name ceylon-inventory \
+  --restart unless-stopped \
   -e SERVICE=inventory-sync \
   -e FLAG="${CHAL_FLAG}" \
   alpine:3.20 sleep infinity >/dev/null
