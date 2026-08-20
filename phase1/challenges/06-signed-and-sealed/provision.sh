@@ -11,12 +11,17 @@ source "$REPO_ROOT/shared/lib/gcp.sh"
 BUCKET="${GCP_PROJECT_ID}-aw-receipts"
 BASE="https://storage.googleapis.com/${BUCKET}"
 
-step "06: creating fine-grained bucket gs://${BUCKET} (listing stays private)"
+step "06: creating bucket gs://${BUCKET} (objects readable, listing stays private)"
 if ! GS ls -b "gs://${BUCKET}" >/dev/null 2>&1; then
-  # -b off => fine-grained ACLs so we can make individual objects public
-  # WITHOUT granting bucket-level list. That's the enumeration gap.
-  GS mb -p "$GCP_PROJECT_ID" -l "$GCP_REGION" -b off "gs://${BUCKET}" >/dev/null
+  GS mb -p "$GCP_PROJECT_ID" -l "$GCP_REGION" "gs://${BUCKET}" >/dev/null
 fi
+# The enumeration gap: anonymous callers may GET a KNOWN object path but may NOT
+# list the bucket. roles/storage.legacyObjectReader is exactly storage.objects.get
+# with no storage.objects.list. This replaces per-object ACLs (`mb -b off` plus
+# `acl ch -u AllUsers:R`), which silently do nothing wherever the
+# constraints/storage.uniformBucketLevelAccess org policy is enforced — leaving
+# the challenge unsolvable with no error at provision time.
+GS iam ch allUsers:legacyObjectReader "gs://${BUCKET}" >/dev/null
 
 tmp="$(mktemp -d)"
 # Public, linked receipts (decoys).
@@ -29,7 +34,6 @@ printf 'Arugam Waves — receipt template (INTERNAL)\nvoucher code: %s\n' "$CHAL
 
 for n in 0000 0001 0002 0003; do
   GS cp "$tmp/CK-2026-${n}.pdf" "gs://${BUCKET}/receipts/CK-2026-${n}.pdf" >/dev/null
-  GS acl ch -u AllUsers:R "gs://${BUCKET}/receipts/CK-2026-${n}.pdf" >/dev/null
 done
 rm -rf "$tmp"
 
