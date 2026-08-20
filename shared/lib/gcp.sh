@@ -7,6 +7,26 @@
 GC() { gcloud --project "$GCP_PROJECT_ID" "$@"; }
 GS() { gsutil "$@"; }
 
+# _iam_retry <description> <cmd...> — retry through IAM eventual consistency.
+# A just-created service account is not immediately resolvable by the other IAM
+# APIs: bindings that reference it fail with "does not exist" for a few seconds
+# after creation. Retries the command rather than failing the whole run.
+_iam_retry() {
+  local desc="$1"; shift
+  local n=0 out
+  until out="$("$@" 2>&1)"; do
+    n=$((n + 1))
+    if [[ $n -ge 6 ]]; then
+      printf '%s\n' "$out" >&2
+      die "$desc: failed after $n attempts"
+    fi
+    warn "$desc: not settled yet (attempt $n/6), retrying in 5s"
+    sleep 5
+  done
+  [[ -n "$out" ]] && printf '%s\n' "$out" >&2
+  return 0
+}
+
 # ensure_apis <api...> — enable one or more service APIs
 ensure_apis() {
   step "Enabling APIs: $*"
@@ -20,7 +40,12 @@ ensure_sa() {
   email="${id}@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
   if ! GC iam service-accounts describe "$email" >/dev/null 2>&1; then
     GC iam service-accounts create "$id" --display-name "$name" --quiet >/dev/null
-    ok "Created SA $email"
+    local i
+    for i in $(seq 1 12); do
+      GC iam service-accounts describe "$email" >/dev/null 2>&1 && break
+      sleep 5
+    done
+    ok "Created SA $email" >&2   # stderr: stdout is this function's return value
   fi
   printf '%s' "$email"
 }
@@ -30,7 +55,8 @@ ensure_sa() {
 grant_project_role() {
   local sa="$1" role="$2"
   GC iam service-accounts describe "$sa" >/dev/null 2>&1 || die "No such SA: $sa"
-  GC projects add-iam-policy-binding "$GCP_PROJECT_ID" \
+  _iam_retry "grant $role to $sa" \
+    GC projects add-iam-policy-binding "$GCP_PROJECT_ID" \
     --member "serviceAccount:${sa}" --role "$role" --condition=None --quiet >/dev/null
   ok "Granted $role to $sa (project scope)"
 }
@@ -38,7 +64,8 @@ grant_project_role() {
 # grant_secret_role <secret> <sa_email> <role> — resource-scoped secret grant
 grant_secret_role() {
   local secret="$1" sa="$2" role="${3:-roles/secretmanager.secretAccessor}"
-  GC secrets add-iam-policy-binding "$secret" \
+  _iam_retry "grant $role on secret:$secret to $sa" \
+    GC secrets add-iam-policy-binding "$secret" \
     --member "serviceAccount:${sa}" --role "$role" --quiet >/dev/null
   ok "Granted $role on secret:$secret to $sa"
 }
@@ -46,7 +73,8 @@ grant_secret_role() {
 # grant_sa_impersonation <target_sa> <actor_sa> [role] — let actor impersonate target
 grant_sa_impersonation() {
   local target="$1" actor="$2" role="${3:-roles/iam.serviceAccountTokenCreator}"
-  GC iam service-accounts add-iam-policy-binding "$target" \
+  _iam_retry "allow $actor to impersonate $target" \
+    GC iam service-accounts add-iam-policy-binding "$target" \
     --member "serviceAccount:${actor}" --role "$role" --quiet >/dev/null
   ok "$actor may impersonate $target ($role)"
 }
@@ -69,7 +97,7 @@ ensure_bucket() {
   local uri="gs://${bucket}"
   if ! GS ls -b "$uri" >/dev/null 2>&1; then
     GS mb -p "$GCP_PROJECT_ID" -l "$GCP_REGION" -b on "$uri" >/dev/null
-    ok "Created bucket $uri"
+    ok "Created bucket $uri" >&2   # stderr: stdout is this function's return value
   fi
   if [[ "$public" == "public" ]]; then
     # Intentionally public — this is the vulnerability for challenge 01.

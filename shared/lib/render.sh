@@ -12,6 +12,12 @@
 # _sed_escape <string> — escape a replacement string for sed (\, &, |, newline)
 _sed_escape() { printf '%s' "$1" | sed -e 's/[\\&|]/\\&/g' -e ':a;N;$!ba;s/\n/\\n/g'; }
 
+# _yaml_dq <string> — render as a YAML double-quoted scalar.
+# Needed because a PLAIN yaml scalar may not contain ": ", " #", or start with
+# a flow indicator — e.g. challenge 07's connection_info ("Activate the attached
+# key: gcloud auth ...") parses as a nested mapping and ctfcli refuses the file.
+_yaml_dq() { printf '"%s"' "$(printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')"; }
+
 # render_challenge <challenge_dir> <flag> <connect> -> echoes the rendered build dir
 render_challenge() {
   local src="$1" flag="$2" connect="${3:-}"
@@ -22,8 +28,16 @@ render_challenge() {
   # Substitute placeholders in the rendered challenge.yml only. Replacement
   # strings are escaped so URLs/keys containing sed metacharacters are safe.
   if [[ -f "$dest/challenge.yml" ]]; then
-    local f_esc c_esc; f_esc="$(_sed_escape "$flag")"; c_esc="$(_sed_escape "$connect")"
+    local f_esc c_esc fq cq
+    f_esc="$(_sed_escape "$flag")"; c_esc="$(_sed_escape "$connect")"
+    fq="$(_sed_escape "$(_yaml_dq "$flag")")"
+    cq="$(_sed_escape "$(_yaml_dq "$connect")")"
+    # Order matters: quote the real YAML VALUE positions first, then substitute
+    # any remaining placeholders raw — those live inside `description: |` block
+    # scalars, which are literal text and must not gain quotes.
     sed -i \
+      -e "s|^connection_info:[[:space:]]*__CONNECT__[[:space:]]*$|connection_info: ${cq}|" \
+      -e "s|^\([[:space:]]*\)-[[:space:]]*__FLAG__[[:space:]]*$|\1- ${fq}|" \
       -e "s|__FLAG__|${f_esc}|g" \
       -e "s|__CONNECT__|${c_esc}|g" \
       "$dest/challenge.yml"

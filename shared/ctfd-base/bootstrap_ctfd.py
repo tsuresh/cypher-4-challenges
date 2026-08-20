@@ -45,7 +45,7 @@ def run_setup(session, url, args):
         sys.exit("Could not read CSRF nonce from /setup — is CTFd up?")
     data = {
         "ctf_name": args.ctf_name,
-        "ctf_description": "Serendib Cyber Task Force — authorised CTF sandbox.",
+        "ctf_description": args.ctf_description,
         "user_mode": "teams",
         "challenge_visibility": "private",
         "account_visibility": "private",
@@ -108,6 +108,8 @@ def main():
     p.add_argument("--admin-email", required=True)
     p.add_argument("--admin-pass", required=True)
     p.add_argument("--ctf-name", required=True)
+    p.add_argument("--ctf-description",
+                   default="Serendib Cyber Task Force — authorised CTF sandbox.")
     p.add_argument("--freeze-epoch", type=int, default=0)
     p.add_argument("--scoreboard", choices=["public", "hidden"], default="hidden")
     args = p.parse_args()
