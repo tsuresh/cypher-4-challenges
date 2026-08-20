@@ -87,19 +87,51 @@ locked-down VPC + firewall, and provisions the Phase-1 VM.
 
 **Then, for production, lock down the VM identity** (until the split refactor lands):
 ```sh
-# create a no-privilege runtime SA and move the VM onto it
+# 0. Reserve the VM's CURRENT ephemeral IP first. The stop/start in step 2 would
+#    otherwise return it to the pool and hand back a different address, silently
+#    breaking DNS and any certificate already issued for ctfd.$BASE_DOMAIN.
+IP=$(gcloud compute instances describe cypher-phase1 --zone "$GCP_ZONE" \
+       --project "$GCP_PROJECT_ID" \
+       --format='value(networkInterfaces[0].accessConfigs[0].natIP)')
+gcloud compute addresses create cypher-phase1-ip \
+  --region "$GCP_REGION" --addresses "$IP" --project "$GCP_PROJECT_ID"
+
+# 1. A runtime service account with no roles at all
 gcloud iam service-accounts create cypher-vm-runtime \
   --project "$GCP_PROJECT_ID" --display-name "CYPHER challenge VM (no roles)"
+
+# 2. Move the VM onto it. The instance MUST be stopped first — set-service-account
+#    is rejected on a RUNNING instance.
+gcloud compute instances stop cypher-phase1 --zone "$GCP_ZONE" --project "$GCP_PROJECT_ID"
 gcloud compute instances set-service-account cypher-phase1 \
   --zone "$GCP_ZONE" --project "$GCP_PROJECT_ID" \
   --service-account "cypher-vm-runtime@$GCP_PROJECT_ID.iam.gserviceaccount.com" \
-  --no-scopes                       # stop/start the VM for this to take effect
-# and strip Editor from the default compute SA (belt & braces)
+  --no-scopes
+gcloud compute instances start cypher-phase1 --zone "$GCP_ZONE" --project "$GCP_PROJECT_ID"
+
+# 3. Check what the DEFAULT compute SA still holds. Projects created since Google
+#    stopped auto-granting Editor to it print nothing here — that is already the
+#    desired state and the removal below is unnecessary (it would error).
+gcloud projects get-iam-policy "$GCP_PROJECT_ID" \
+  --flatten='bindings[].members' \
+  --filter='bindings.members:compute@developer.gserviceaccount.com' \
+  --format='value(bindings.role)'
+
+# Only if that printed roles/editor:
 PNUM=$(gcloud projects describe "$GCP_PROJECT_ID" --format='value(projectNumber)')
 gcloud projects remove-iam-policy-binding "$GCP_PROJECT_ID" \
   --member "serviceAccount:${PNUM}-compute@developer.gserviceaccount.com" \
   --role roles/editor
 ```
+
+Verify the lock-down took effect:
+```sh
+gcloud compute instances describe cypher-phase1 --zone "$GCP_ZONE" \
+  --project "$GCP_PROJECT_ID" --format='json(serviceAccounts)'
+```
+The output must name `cypher-vm-runtime` and contain **no `scopes` key at all**.
+A `scopes` list — even a short one — means challenge 04's SSRF still leaks a
+usable token.
 
 **Verify the budget alert actually emails you** (trigger a low test threshold)
 before go-live — an untested budget cap is not a cap.
@@ -157,18 +189,40 @@ SH
 
 ### 5b. Data plane — on the VM (Docker + kind only, never `gcloud`)
 
+Ship the tree from the admin host rather than `git clone`-ing on the VM. This
+box runs an exposed Docker API (08), a no-auth Kubernetes dashboard (09) and
+several deliberately vulnerable web apps — a deploy key for the private repo has
+no business living on it.
+
 ```sh
 # from the admin host
-gcloud compute scp .env cypher-phase1:~/ --zone "$GCP_ZONE" --project "$GCP_PROJECT_ID"
+tar czf /tmp/cypher.tgz --exclude=./.venv --exclude=./.git --exclude=./.state .
+gcloud compute scp /tmp/cypher.tgz .env cypher-phase1:~/ \
+  --zone "$GCP_ZONE" --project "$GCP_PROJECT_ID"
 gcloud compute ssh cypher-phase1 --zone "$GCP_ZONE" --project "$GCP_PROJECT_ID"
+```
 
-# on cypher-phase1
-git clone <repo> cypher && cd cypher && mv ~/.env .
-( cd phase1 && docker compose --env-file ../.env up -d --build \
-    ctfd db cache proxy c02-leaked-ledger c03-forgotten-backup \
-    c04-metadata-mischief c05-git-happens c08-dind )
+```sh
+# on cypher-phase1 — one-time host setup
+cat /opt/cypher/.startup-done            # boot script finished? (re-runs every boot)
+sudo ufw allow 8000:8099/tcp             # older VMs booted before this was in vm-startup.sh
+sudo usermod -aG docker "$USER"          # kind + compose need the socket without sudo
+newgrp docker                            # pick up the group in this shell
 
-set -a; . ./.env; set +a
+mkdir -p ~/cypher && tar xzf ~/cypher.tgz -C ~/cypher && mv ~/.env ~/cypher/.env
+cd ~/cypher && git init -q               # per-challenge scripts call
+                                         # `git rev-parse --show-toplevel` directly,
+                                         # so the tree must be a repo
+```
+
+```sh
+# on cypher-phase1 — bring up the data plane
+cd ~/cypher/phase1
+docker compose --env-file ../.env up -d --build \
+  ctfd db cache proxy c02-leaked-ledger c03-forgotten-backup \
+  c04-metadata-mischief c05-git-happens c08-dind
+
+cd ~/cypher && set -a; . ./.env; set +a
 CHAL_FLAG="$FLAG_08" bash phase1/challenges/08-careless-container/provision.sh
 CHAL_FLAG="$FLAG_09" bash phase1/challenges/09-peering-into-the-cluster/setup-kind.sh
 ```
@@ -314,7 +368,8 @@ Confirm `gcloud compute instances list` is empty and billing flatlines.
 
 | Item | Status | Fix |
 |---|---|---|
-| VM identity leaks via chal 04 SSRF | **open (must-fix)** | split provisioning; `cypher-vm-runtime` no-roles SA (§3) |
+| VM identity leaks via chal 04 SSRF | fixed (phase 1) | `cypher-phase1` runs `cypher-vm-runtime`, no roles, no scopes (§3) |
+| Ephemeral VM IP breaks DNS on restart | fixed (phase 1) | `cypher-phase1-ip` static address reserved (§3 step 0) |
 | `provision.sh` couples control + data plane | open | refactor into `provision-cloud.sh` + `provision-vm.sh` |
 | `sync.sh` publishes `__FLAG__` placeholders | **open (trap)** | it walks the *source* tree; only run it against a rendered tree — use `render_and_sync` (§5d) |
 | DB / admin / session secrets | fixed | now in `.env.example`; generate per §2 |

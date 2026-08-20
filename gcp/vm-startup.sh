@@ -32,6 +32,10 @@ ufw default allow outgoing
 ufw allow 22/tcp
 ufw allow 80/tcp
 ufw allow 443/tcp
+# Phase-1 container challenges publish on 8000-8099 (the VPC firewall opens the
+# same range). Docker's own iptables rules normally bypass ufw's INPUT chain, so
+# these ports often work without this line — but do not rely on that.
+ufw allow 8000:8099/tcp
 ufw allow 10000:10100/tcp
 ufw --force enable
 
