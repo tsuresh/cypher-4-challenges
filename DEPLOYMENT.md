@@ -117,39 +117,139 @@ and ports 80/443 are open (they are, per the firewall). No manual cert steps.
 
 ---
 
-## 5. Deploy Phase 1
+## 5. Deploy Phase 1 (split control plane / data plane)
 
-**Data plane — on the VM** (SSH from an admin range), Docker + kind only:
+Run §3's VM lock-down **first**. Once `cypher-phase1` is on `cypher-vm-runtime`
+with `--no-scopes`, no `gcloud` call works from the VM — that is the whole point,
+and it is why the steps below are split by *where* they run.
+
+**Flags come first, on the admin host.** Three challenges bake their flag into a
+container at `compose up` time (02, 03, 05) and two more are provisioned on the
+VM (08, 09) — but *every* challenge is rendered and loaded into CTFd from the
+admin host. Both planes must agree on the same values, so generate them once
+here and carry them to the VM inside `.env`.
+
+### 5a. Generate the flags (admin host)
+
 ```sh
+bash <<'SH'
+source shared/lib/common.sh; load_env; source shared/lib/flags.sh
+gen() { make_flag "$1_$(random_token 4)"; }
+cat >> .env <<EOF
+
+# --- Phase 1 flags (generated $(date -u +%F)) --------------------------------
+# FLAG_02/03/05 are consumed by docker compose on the VM; the rest are passed
+# as CHAL_FLAG to each provisioner. .env is gitignored — keep it that way.
+FLAG_01=$(gen warehouse)
+FLAG_02=$(gen ledger)
+FLAG_03=$(gen backup)
+FLAG_04=$(gen metadata)
+FLAG_05=$(gen githappens)
+FLAG_06=$(gen signed)
+FLAG_07=$(gen permissions)
+FLAG_08=$(gen container)
+FLAG_09=$(gen cluster)
+FLAG_10=$(gen functionleak)
+FLAG_11=$(gen escalation)
+EOF
+SH
+```
+
+### 5b. Data plane — on the VM (Docker + kind only, never `gcloud`)
+
+```sh
+# from the admin host
+gcloud compute scp .env cypher-phase1:~/ --zone "$GCP_ZONE" --project "$GCP_PROJECT_ID"
+gcloud compute ssh cypher-phase1 --zone "$GCP_ZONE" --project "$GCP_PROJECT_ID"
+
 # on cypher-phase1
-git clone <repo> cypher && cd cypher
-scp/copy your .env here
-cd phase1 && docker compose --env-file ../.env up -d --build \
-  ctfd db cache proxy c02-leaked-ledger c03-forgotten-backup \
-  c04-metadata-mischief c05-git-happens c08-dind
-# challenge 09 (kind):
-CHAL_FLAG=<gen> ./challenges/09-peering-into-the-cluster/provision.sh
+git clone <repo> cypher && cd cypher && mv ~/.env .
+( cd phase1 && docker compose --env-file ../.env up -d --build \
+    ctfd db cache proxy c02-leaked-ledger c03-forgotten-backup \
+    c04-metadata-mischief c05-git-happens c08-dind )
+
+set -a; . ./.env; set +a
+CHAL_FLAG="$FLAG_08" bash phase1/challenges/08-careless-container/provision.sh
+CHAL_FLAG="$FLAG_09" bash phase1/challenges/09-peering-into-the-cluster/setup-kind.sh
 ```
 
-**Control plane — from the admin host**, everything that needs `gcloud`:
+> Call 09's `setup-kind.sh` directly, **not** its `provision.sh`: the wrapper calls
+> `vm_ip` (a `gcloud` call) only to print a CONNECT string, which a `--no-scopes`
+> VM cannot do. The admin host supplies that string in §5d.
+
+### 5c. Control plane — bootstrap CTFd over its API (admin host)
+
+DNS must resolve and Caddy must hold its certificate first (§4). CTFd's port
+8000 is bound to `127.0.0.1` on the VM, so the admin host can only reach it
+through the public TLS endpoint.
+
 ```sh
-# CTFd config over the API (admin, token, public scoreboard, freeze for finals)
-python3 shared/ctfd-base/bootstrap_ctfd.py --url https://ctfd.<domain> …
-# GCP-native challenges (creates resources in the project, not on the VM):
-for c in 01-open-warehouse 06-signed-and-sealed 07-too-many-permissions \
-         10-function-leak 11-the-escalation; do
-  CHAL_FLAG=<gen> ./phase1/challenges/$c/provision.sh
-done
-# challenge 04's flag = a custom metadata attribute (set from here, not the VM):
-CHAL_FLAG=<gen> ./phase1/challenges/04-metadata-mischief/provision.sh
-# then load every challenge.yml into CTFd:
-CTFD_URL=https://ctfd.<domain> CTFD_ADMIN_TOKEN=<token> ./shared/ctfcli/sync.sh phase1
-```
-> The single-command `phase1/provision.sh` does all of the above at once **on the
-> VM** — convenient for a lab, but it needs a privileged VM SA. Use it only if you
-> accept that trade-off; otherwise run the two planes separately as above.
+curl -sS -o /dev/null -w '%{http_code}\n' "https://ctfd.$BASE_DOMAIN/"   # expect 200 or 302
 
----
+set -a; . ./.env; set +a
+export CTFD_URL="https://ctfd.$BASE_DOMAIN"
+export CTFD_ADMIN_TOKEN="$(python3 shared/ctfd-base/bootstrap_ctfd.py \
+  --url "$CTFD_URL" \
+  --admin-user "$CTFD_ADMIN_USER" --admin-email "$CTFD_ADMIN_EMAIL" \
+  --admin-pass "$CTFD_ADMIN_PASSWORD" \
+  --ctf-name "CYPHER 4.0 — Recruitment Trials" \
+  --scoreboard public)"
+[ -n "$CTFD_ADMIN_TOKEN" ] || echo "CTFd bootstrap failed — stop here"
+```
+
+### 5d. Control plane — GCP challenges, then load all 13 into CTFd (admin host)
+
+> ⚠️ **Do not use `shared/ctfcli/sync.sh` for this.** It walks `phase1/challenges/`,
+> the *source* tree, whose `challenge.yml` files still carry the `__FLAG__`
+> placeholder — it would publish 11 challenges whose accepted flag is the literal
+> string `__FLAG__`, i.e. unsolvable and trivially "solvable" at the same time.
+> `render_and_sync` substitutes the real flag into a gitignored build copy under
+> `.state/build/` and installs *that*. Use it. (`sync.sh` is only safe against an
+> already-rendered tree.)
+>
+> Order matters within this block: 07 and 11 write the SA-key files that ctfcli
+> uploads as challenge attachments, so each provisioner must run before its own
+> `render_and_sync` — which is what the loop does.
+
+```sh
+bash <<'SH'
+source shared/lib/common.sh; load_env
+source shared/lib/flags.sh; source shared/lib/gcp.sh; source shared/lib/render.sh
+[[ -d .venv ]] && PATH="$PWD/.venv/bin:$PATH"
+: "${CTFD_URL:?export CTFD_URL first — see 5c}"
+: "${CTFD_ADMIN_TOKEN:?export CTFD_ADMIN_TOKEN first — see 5c}"
+CH=phase1/challenges
+IP="$(vm_ip cypher-phase1)"
+
+# capture the CONNECT= line a provisioner prints as its last line
+runp() { CHAL_FLAG="$2" bash "$1/provision.sh" 2>&1 | tee /dev/stderr | sed -n 's/^CONNECT=//p' | tail -1; }
+
+# no infrastructure
+render_and_sync "$CH/00-practice-range"  "CYPHER{welcome_to_cypher}" ""
+render_and_sync "$CH/12-blue-team-brief" "n/a"                       ""
+
+# already running on the VM (§5b) — connection info is just the VM IP + port
+render_and_sync "$CH/02-leaked-ledger"            "$FLAG_02" "http://${IP}:8002/"
+render_and_sync "$CH/03-forgotten-backup"         "$FLAG_03" "http://${IP}:8003/"
+render_and_sync "$CH/05-git-happens"              "$FLAG_05" "http://${IP}:8005/"
+render_and_sync "$CH/08-careless-container"       "$FLAG_08" "tcp://${IP}:8008"
+render_and_sync "$CH/09-peering-into-the-cluster" "$FLAG_09" "https://${IP}:8009/  (Kubernetes Dashboard — click Skip)"
+
+# GCP-native: provision from here (privileged), sync with the CONNECT it printed
+for c in 01-open-warehouse 04-metadata-mischief 06-signed-and-sealed \
+         07-too-many-permissions 10-function-leak 11-the-escalation; do
+  eval "f=\$FLAG_${c%%-*}"
+  render_and_sync "$CH/$c" "$f" "$(runp "$CH/$c" "$f")"
+done
+SH
+```
+
+Every flag that was actually installed is recorded in `.state/flags.csv`
+(gitignored, mode 600) — that file is what `verify.sh` and the solve check read.
+
+> The single-command `phase1/provision.sh` does all of §5 at once **on the VM**.
+> Convenient for a lab, but it needs a privileged VM SA, which re-opens the
+> challenge-04 hole §3 just closed. Do not use it for a public event.
 
 ## 6. Verify every solve path
 
@@ -170,6 +270,8 @@ Confirm each flag registers on the public scoreboard by actually submitting one.
 - [ ] Budget alert tested and delivered to `ALERT_EMAIL`.
 - [ ] Live-window VM is **standard, not Spot**.
 - [ ] TLS green on `https://ctfd.<domain>`; scoreboard reachable.
+- [ ] No challenge accepts the literal `__FLAG__` — challenges were loaded via
+      `render_and_sync` (§5d), never `shared/ctfcli/sync.sh` on the source tree.
 - [ ] `verify.sh` fully green; a manual dry-solve of 00→11 done.
 - [ ] DB volume snapshot / backup plan in place for the window.
 
@@ -214,6 +316,7 @@ Confirm `gcloud compute instances list` is empty and billing flatlines.
 |---|---|---|
 | VM identity leaks via chal 04 SSRF | **open (must-fix)** | split provisioning; `cypher-vm-runtime` no-roles SA (§3) |
 | `provision.sh` couples control + data plane | open | refactor into `provision-cloud.sh` + `provision-vm.sh` |
+| `sync.sh` publishes `__FLAG__` placeholders | **open (trap)** | it walks the *source* tree; only run it against a rendered tree — use `render_and_sync` (§5d) |
 | DB / admin / session secrets | fixed | now in `.env.example`; generate per §2 |
 | CTFd multi-worker `SECRET_KEY` | fixed | auto-generated + persisted by provision.sh |
 | Egress from challenge workloads | partial | tighten VPC egress per challenge to what each solve needs |
