@@ -40,8 +40,22 @@ else
 fi
 
 log "Linking billing account $GCP_BILLING_ACCOUNT_ID"
-gcloud billing projects link "$GCP_PROJECT_ID" \
-  --billing-account "$GCP_BILLING_ACCOUNT_ID" --quiet
+# Skip the link when billing is already enabled, and never hang forever on it:
+# a missing Billing Account Administrator role on the billing account makes this
+# call stall rather than fail, which looks like a wedged bootstrap.
+if [[ "$(timeout 60 gcloud billing projects describe "$GCP_PROJECT_ID" \
+          --format='value(billingEnabled)' 2>/dev/null)" == "True" ]]; then
+  ok "Billing already linked to $GCP_PROJECT_ID"
+else
+  timeout 120 gcloud billing projects link "$GCP_PROJECT_ID" \
+    --billing-account "$GCP_BILLING_ACCOUNT_ID" --quiet \
+    || die "Could not link billing account $GCP_BILLING_ACCOUNT_ID to $GCP_PROJECT_ID.
+    Active account: $(gcloud config get-value account 2>/dev/null || echo unknown)
+    It needs roles/billing.admin (or Billing Account Administrator) on that account.
+    Check with:  gcloud billing accounts list
+    Or link it in the console (Billing > Account management > Link project) and
+    re-run this script — it is idempotent and will skip the step."
+fi
 
 # --- 2. APIs ---------------------------------------------------------------
 ensure_apis \
@@ -62,20 +76,42 @@ ensure_apis \
 # --- 3. Budget alert (HARD guard) ------------------------------------------
 step "Configuring budget alert at \$${BUDGET_CAP_USD}"
 BILLING_ACCT="$GCP_BILLING_ACCOUNT_ID"
-if ! gcloud billing budgets list --billing-account "$BILLING_ACCT" \
+# Budget calls are billing-account scoped, so they bypass the GC() wrapper that
+# pins --project everywhere else — which means they silently inherit whatever
+# core/project happens to be as the QUOTA project, and fail with
+# USER_PROJECT_DENIED if the caller has no serviceusage rights there. Pin
+# --billing-project to our own sandbox instead. Bounded by timeout so a genuine
+# missing role on the billing account fails loudly rather than stalling.
+if [[ "${SKIP_BUDGET:-0}" == "1" ]]; then
+  warn "SKIP_BUDGET=1 — not creating the budget alert. You MUST have a cap set in the console."
+elif timeout 60 gcloud billing budgets list --billing-account "$BILLING_ACCT" \
+      --billing-project "$GCP_PROJECT_ID" \
       --format='value(displayName)' 2>/dev/null | grep -q '^cypher4-cap$'; then
-  gcloud billing budgets create \
+  ok "Budget already configured"
+else
+  timeout 120 gcloud billing budgets create \
     --billing-account "$BILLING_ACCT" \
+    --billing-project "$GCP_PROJECT_ID" \
     --display-name "cypher4-cap" \
     --budget-amount "${BUDGET_CAP_USD}USD" \
     --filter-projects "projects/$GCP_PROJECT_ID" \
     --threshold-rule=percent=0.5 \
     --threshold-rule=percent=0.9 \
     --threshold-rule=percent=1.0 \
-    --quiet
-  ok "Budget 'cypher4-cap' created (alerts at 50/90/100%)"
-else
-  ok "Budget already configured"
+    --quiet \
+    && ok "Budget 'cypher4-cap' created (alerts at 50/90/100%)" \
+    || die "Could not create the \$${BUDGET_CAP_USD} budget alert on $BILLING_ACCT.
+    Active account: $(gcloud config get-value account 2>/dev/null || echo unknown)
+    Two different causes look similar here — read the error above:
+      * USER_PROJECT_DENIED / serviceUsageConsumer -> the QUOTA project is wrong.
+        This script now pins --billing-project $GCP_PROJECT_ID; if you still see
+        it, run: gcloud config set project $GCP_PROJECT_ID
+      * PERMISSION_DENIED on the billing account -> the account genuinely lacks
+        roles/billing.admin there (linking a project in the console does not
+        grant it).
+    This is your only spend guard for a public event — do not skip it lightly.
+    Fix the cause and re-run, or create the budget in the console
+    (Billing > Budgets & alerts) and re-run with:  SKIP_BUDGET=1 ./gcp/bootstrap.sh"
 fi
 warn "Verify the budget alert actually emails ${ALERT_EMAIL:-your admin} BEFORE go-live."
 
