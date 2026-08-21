@@ -28,3 +28,6 @@ node_modules/
 
 # ctfcli local config (contains API token)
 .ctf/
+
+# Organizer answer key — spoilers, never commit
+SOLUTIONS.md
