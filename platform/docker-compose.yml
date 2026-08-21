@@ -1,0 +1,75 @@
+# platform/docker-compose.yml — CTFd on its OWN host, reached only through a
+# Cloudflare tunnel. Run from this directory:
+#   docker compose --env-file ../.env up -d
+#
+# Why this exists (see DEPLOYMENT.md §1): phase1/docker-compose.yml runs CTFd
+# alongside the deliberately vulnerable challenge containers. A compromise of
+# that host would expose the CTFd database, the session SECRET_KEY (session
+# forgery => admin), Caddy's TLS key, and every flag in .env. Splitting the
+# platform onto a host with NO inbound exposure removes all of that from the
+# challenge blast radius.
+#
+# Nothing here publishes a public port. cloudflared makes an OUTBOUND-only
+# connection to Cloudflare and reaches CTFd over the internal docker network, so
+# cypher-platform needs no ingress firewall rule at all. Cloudflare terminates
+# TLS, so there is no Caddy and no Let's Encrypt here.
+services:
+
+  ctfd:
+    image: ctfd/ctfd:3.7.5
+    restart: unless-stopped
+    environment:
+      - UPLOAD_FOLDER=/var/uploads
+      - DATABASE_URL=mysql+pymysql://ctfd:${CTFD_DB_PASSWORD:-ctfd}@db/ctfd
+      - REDIS_URL=redis://cache:6379
+      - WORKERS=3
+      - SECRET_KEY=${CTFD_SECRET_KEY:-}
+      - REVERSE_PROXY=true          # cloudflared forwards X-Forwarded-For
+      - FIRST_BLOOD_BONUS=${FIRST_BLOOD_BONUS:-50}
+    ports:
+      - "127.0.0.1:8000:8000"       # loopback only, for on-host debugging
+    volumes:
+      - ctfd_uploads:/var/uploads
+      - ctfd_logs:/var/log/CTFd
+      - ../shared/ctfd-base/plugins/first_blood:/opt/CTFd/CTFd/plugins/first_blood:ro
+    depends_on: [db, cache]
+    networks: [platform]
+
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    environment:
+      - MARIADB_ROOT_PASSWORD=${CTFD_DB_ROOT_PASSWORD:-root}
+      - MARIADB_USER=ctfd
+      - MARIADB_PASSWORD=${CTFD_DB_PASSWORD:-ctfd}
+      - MARIADB_DATABASE=ctfd
+    command: [mysqld, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci,
+              --wait_timeout=28800, --log-warnings=0]
+    volumes: [ctfd_db:/var/lib/mysql]
+    networks: [platform]
+
+  cache:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes: [ctfd_redis:/data]
+    networks: [platform]
+
+  # Outbound-only tunnel. The hostname -> service mapping lives in the
+  # Cloudflare Zero Trust dashboard for this tunnel; point it at http://ctfd:8000
+  # (resolved on the docker network below).
+  cloudflared:
+    image: cloudflare/cloudflared:2024.8.3
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN:?set CLOUDFLARE_TUNNEL_TOKEN in .env}
+    depends_on: [ctfd]
+    networks: [platform]
+
+volumes:
+  ctfd_uploads:
+  ctfd_logs:
+  ctfd_db:
+  ctfd_redis:
+
+networks:
+  platform:
+    name: cypher-platform
