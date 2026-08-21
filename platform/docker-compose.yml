@@ -16,7 +16,7 @@
 services:
 
   ctfd:
-    image: ctfd/ctfd:3.7.5
+    image: ctfd/ctfd:3.8.7
     restart: unless-stopped
     environment:
       - UPLOAD_FOLDER=/var/uploads

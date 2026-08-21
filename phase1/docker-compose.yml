@@ -1,6 +1,15 @@
-# phase1/docker-compose.yml — self-contained Phase 1 stack: CTFd + proxy +
-# container-backed challenges. Run from this directory so relative paths resolve:
-#   docker compose --env-file ../.env up -d --build
+# phase1/docker-compose.yml — Phase 1 CHALLENGE containers.
+#
+# CTFd itself now runs on its own host (cypher-platform) behind a Cloudflare
+# tunnel — see platform/docker-compose.yml and DEPLOYMENT.md §1. The platform
+# services (ctfd, db, cache, proxy) are kept here only for the single-host "lab"
+# topology and sit behind the `allinone` profile, so they do NOT start by
+# default. That matters: without the profile, a stray `up -d` on the challenge
+# host would resurrect a stale CTFd — old database, session SECRET_KEY and TLS
+# key — on the very box that runs the deliberately vulnerable challenges.
+#
+# Challenge host (normal):   docker compose --env-file ../.env up -d
+# Single-host lab topology:  docker compose --env-file ../.env --profile allinone up -d --build
 #
 # GCP-native challenges (01, 06, 07, 10, 11) are created by provision.sh via
 # gcloud. Kubernetes (09) uses kind, also driven by provision.sh.
@@ -8,7 +17,8 @@ services:
 
   # ---- CTFd platform -------------------------------------------------------
   ctfd:
-    image: ctfd/ctfd:3.7.5
+    profiles: ["allinone"]   # opt-in: CTFd now lives on cypher-platform
+    image: ctfd/ctfd:3.8.7
     restart: unless-stopped
     environment:
       - UPLOAD_FOLDER=/var/uploads
@@ -30,6 +40,7 @@ services:
     networks: [cypher]
 
   db:
+    profiles: ["allinone"]   # opt-in: CTFd now lives on cypher-platform
     image: mariadb:10.11
     restart: unless-stopped
     environment:
@@ -43,12 +54,14 @@ services:
     networks: [cypher]
 
   cache:
+    profiles: ["allinone"]   # opt-in: CTFd now lives on cypher-platform
     image: redis:7-alpine
     restart: unless-stopped
     volumes: [ctfd_redis:/data]
     networks: [cypher]
 
   proxy:
+    profiles: ["allinone"]   # opt-in: CTFd now lives on cypher-platform
     image: caddy:2-alpine
     restart: unless-stopped
     ports: ["80:80", "443:443"]
