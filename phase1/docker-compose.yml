@@ -69,7 +69,7 @@ services:
     environment:
       - "CHAL_FLAG=${FLAG_02:-CYPHER{placeholder}}"
     ports: ["8002:80"]
-    networks: [cypher]
+    networks: [challenges]
 
   c03-forgotten-backup:
     build: ./challenges/03-forgotten-backup
@@ -77,14 +77,14 @@ services:
     environment:
       - "CHAL_FLAG=${FLAG_03:-CYPHER{placeholder}}"
     ports: ["8003:80"]
-    networks: [cypher]
+    networks: [challenges]
 
   c04-metadata-mischief:
     build: ./challenges/04-metadata-mischief
     restart: unless-stopped
     # Reaches the real GCE metadata server; flag is a custom metadata attribute.
     ports: ["8004:8000"]
-    networks: [cypher]
+    networks: [challenges]
 
   c05-git-happens:
     build: ./challenges/05-git-happens
@@ -92,17 +92,30 @@ services:
     environment:
       - "CHAL_FLAG=${FLAG_05:-CYPHER{placeholder}}"
     ports: ["8005:80"]
-    networks: [cypher]
+    networks: [challenges]
 
   # 08 — exposed Docker API inside an isolated Docker-in-Docker sandbox.
   c08-dind:
-    image: docker:26-dind
+    # ROOTLESS dockerd. The Docker API here is unauthenticated and published to
+    # the internet, so the daemon must not be able to touch the host.
+    #
+    # `privileged: true` is STILL REQUIRED — it is what the rootless variant
+    # needs to set up its own namespaces, and Docker's own dind-rootless docs
+    # pass it. Without it the daemon starts but cannot run ANY container
+    # ("error mounting proc to rootfs: operation not permitted"), which silently
+    # breaks the challenge. The protection comes from dockerd running as an
+    # unprivileged user inside a user namespace, NOT from dropping privileged:
+    # verified on the VM, a nested --privileged container sees /dev/sda1 but
+    # gets "permission denied" on mount, raw read, and mknod. With the plain
+    # (non-rootless) docker:26-dind image the same nested container can mount
+    # the host root filesystem.
+    image: docker:26-dind-rootless
     restart: unless-stopped
-    privileged: true                 # required for DinD; isolated from the host
+    privileged: true
     environment: [DOCKER_TLS_CERTDIR=]
-    command: [dockerd, --host=tcp://0.0.0.0:2375, --host=unix:///var/run/docker.sock]
+    command: ["--host=tcp://0.0.0.0:2375"]
     ports: ["8008:2375"]
-    networks: [cypher]
+    networks: [dind]
 
 volumes:
   ctfd_uploads:
@@ -113,5 +126,16 @@ volumes:
   caddy_config:
 
 networks:
+  # Platform only: ctfd + db + cache + proxy.
   cypher:
     name: cypher
+  # Challenge web apps. Deliberately CANNOT reach ctfd/db/cache — challenge 04
+  # is an unfiltered SSRF, and a flat network let it hit http://ctfd:8000,
+  # db:3306 and cache:6379 from inside a challenge container.
+  challenges:
+    name: cypher-challenges
+  # Challenge 08 alone. Its Docker API is unauthenticated, and GET
+  # /containers/<id>/json exposes Config.Env — so any container that can reach
+  # it can read 08's flag without solving 08.
+  dind:
+    name: cypher-dind

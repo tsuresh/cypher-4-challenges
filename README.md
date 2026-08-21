@@ -211,8 +211,22 @@ projecting CTFd's own `/scoreboard` is the fallback.
   healthchecks (07, 11) actively assert the SA **cannot** exceed its scope.
 - The metadata challenge (04) plants its flag as a **custom instance-metadata
   attribute** on a VM whose SA is scoped to nothing project-wide.
-- The container challenge (08) exposes its Docker API inside a throwaway
-  **Docker-in-Docker sandbox** — a breakout lands in the DinD, never on the host.
+- The container challenge (08) exposes its Docker API inside a
+  **Docker-in-Docker sandbox**, on its own Docker network.
+  > ⚠️ **This is the sharpest edge in the deployment.** The DinD daemon is
+  > unauthenticated (`DOCKER_TLS_CERTDIR=`, `tcp://0.0.0.0:2375`) and published
+  > to the world on 8008. While it runs `privileged: true`, the host's `/dev` is
+  > bind-mounted into it and `CAP_SYS_ADMIN` is available, so a nested privileged
+  > container can mount the host's block device — anyone on the internet, with no
+  > account, reaches host root. A breakout does **not** stay inside the DinD.
+  > **Fixed** by running `docker:26-dind-rootless`. `privileged: true` is still
+  > required (the rootless variant needs it, and without it the daemon cannot
+  > start any container at all), but dockerd then runs as an unprivileged user
+  > inside a user namespace: a nested `--privileged` container can see
+  > `/dev/sda1` yet is denied mount, raw read and mknod.
+  > The VM's own cloud identity is powerless (`cypher-vm-runtime`, no scopes), so
+  > the blast radius is the host — the CTFd database, the session `SECRET_KEY`,
+  > Caddy's TLS key, and any flags present on it — not the GCP project.
 - SSH is restricted to `ADMIN_SOURCE_RANGES`; bootstrap refuses `0.0.0.0/0`.
 
 ---
