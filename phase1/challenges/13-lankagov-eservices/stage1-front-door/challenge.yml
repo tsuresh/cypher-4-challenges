@@ -1,0 +1,28 @@
+name: "LankaGov e-Services — Front Door"
+author: SCTF
+category: LankaGov e-Services
+description: |
+  The LankaGov citizen portal was rebuilt in a hurry. Somewhere behind the
+  citizen-facing pages is an **internal notice board** that staff use — and it
+  decides who's staff by asking the browser, not the server.
+
+  Get in, and you'll find more than notices.
+
+  Portal: __CONNECT__
+
+  Stage 1 of 3. This is the tie-break chain — each stage unlocks the next.
+value: 150
+type: dynamic
+extra:
+  initial: 150
+  minimum: 50
+  decay: 20
+connection_info: __CONNECT__
+flags:
+  - __FLAG__
+hints:
+  - content: "Staff and citizens load the same portal. Something in your request tells the server which one you are — and you control it."
+    cost: 0
+tags: [web, broken-access-control, medium, tie-break]
+state: hidden
+version: "0.1"

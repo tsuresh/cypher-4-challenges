@@ -107,6 +107,17 @@ services:
     ports: ["8005:80"]
     networks: [challenges]
 
+  # 13 — LankaGov e-Services: 3-stage chained web challenge (tie-break separator).
+  c13-lankagov:
+    build: ./challenges/13-lankagov-eservices
+    restart: unless-stopped
+    environment:
+      - "FLAG1=${FLAG_13_1:-CYPHER{placeholder1}}"
+      - "FLAG2=${FLAG_13_2:-CYPHER{placeholder2}}"
+      - "FLAG3=${FLAG_13_3:-CYPHER{placeholder3}}"
+    ports: ["8013:8000"]
+    networks: [challenges]
+
   # 08 — exposed Docker API inside an isolated Docker-in-Docker sandbox.
   c08-dind:
     # ROOTLESS dockerd. The Docker API here is unauthenticated and published to

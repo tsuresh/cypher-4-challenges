@@ -1,0 +1,29 @@
+name: "LankaGov e-Services — Records Room"
+author: SCTF
+category: LankaGov e-Services
+description: |
+  The Front Door handed you a staff key to the records API. Citizens are only
+  meant to see their **own** application — but the API doesn't check that.
+
+  Your application is #1001. There are others. One of them is sealed.
+
+  Portal: __CONNECT__
+
+  Stage 2 of 3. Requires the staff key from the Front Door.
+value: 200
+type: dynamic
+extra:
+  initial: 200
+  minimum: 75
+  decay: 20
+connection_info: __CONNECT__
+flags:
+  - __FLAG__
+hints:
+  - content: "You can read your own application. The API makes sure you're staff, but does it ever check whose record you actually asked for?"
+    cost: 0
+requirements:
+  - "LankaGov e-Services — Front Door"
+tags: [web, idor, access-control, medium, tie-break]
+state: hidden
+version: "0.1"

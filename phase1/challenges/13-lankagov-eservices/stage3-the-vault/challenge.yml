@@ -1,0 +1,28 @@
+name: "LankaGov e-Services — The Vault"
+author: SCTF
+category: LankaGov e-Services
+description: |
+  The sealed record points at a document in the store. The download endpoint
+  serves files by name — and only by name. If it doesn't mind *where* that name
+  points, the master vault config is one directory away.
+
+  Portal: __CONNECT__
+
+  Stage 3 of 3 — the finale. Reads the server's own restricted config.
+value: 250
+type: dynamic
+extra:
+  initial: 250
+  minimum: 100
+  decay: 20
+connection_info: __CONNECT__
+flags:
+  - __FLAG__
+hints:
+  - content: "The download endpoint fetches a file purely by the name you give it, and trusts that name completely. A file name doesn't have to stay in the folder it expects."
+    cost: 0
+requirements:
+  - "LankaGov e-Services — Records Room"
+tags: [web, path-traversal, lfi, hard, tie-break]
+state: hidden
+version: "0.1"
