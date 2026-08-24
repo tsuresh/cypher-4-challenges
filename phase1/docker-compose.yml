@@ -115,6 +115,9 @@ services:
       - "FLAG1=${FLAG_13_1:-CYPHER{placeholder1}}"
       - "FLAG2=${FLAG_13_2:-CYPHER{placeholder2}}"
       - "FLAG3=${FLAG_13_3:-CYPHER{placeholder3}}"
+      # Stable staff key so a container restart/rebuild does not invalidate keys
+      # teams already extracted in Stage 1.
+      - "STAFF_KEY=${LANKAGOV_STAFF_KEY:-}"
     ports: ["8013:8000"]
     networks: [challenges]
 

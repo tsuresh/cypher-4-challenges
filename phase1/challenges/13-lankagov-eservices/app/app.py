@@ -188,14 +188,25 @@ def documents():
     if not name:
         return jsonify(error="file parameter required",
                        example="/api/documents?file=sealed_4471.pdf"), 400
-    # VULN: user input joined onto the base dir with no normalisation or
-    # containment check, so ../ escapes DOCS_DIR (e.g. ../secret/vault.conf).
+    # VULN (intended): user input joined onto the base dir with no containment
+    # check, so ../ escapes DOCS_DIR (e.g. ../secret/vault.conf). This traversal
+    # is the Stage 3 objective and is deliberately preserved.
     path = os.path.join(DOCS_DIR, name)
+    # Availability guards ONLY (do not narrow the traversal): reject anything
+    # that isn't a plain regular file, and cap the read. Without these, pointing
+    # ?file= at a device (/dev/random), a FIFO, a directory, or a huge file
+    # blocks a worker for the whole request timeout — which is what took the
+    # service down. vault.conf is a small regular file, so the solve is unaffected.
+    MAX_BYTES = 256 * 1024
+    if not os.path.isfile(path):
+        return jsonify(error=f"cannot read document: {name}"), 404
     try:
+        if os.path.getsize(path) > MAX_BYTES:
+            return jsonify(error="document too large"), 413
         with open(path, "rb") as fh:
-            data = fh.read()
+            data = fh.read(MAX_BYTES)
         return Response(data, mimetype="application/octet-stream")
-    except (FileNotFoundError, IsADirectoryError, PermissionError):
+    except (FileNotFoundError, IsADirectoryError, PermissionError, OSError):
         return jsonify(error=f"cannot read document: {name}"), 404
 
 
