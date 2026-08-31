@@ -39,7 +39,9 @@
       "Bash(curl -s --max-time 6 ifconfig.me)",
       "Bash(timeout 120 gcloud compute scp /tmp/cypher-deploy.tgz cypher-phase2:/tmp/cypher-deploy.tgz --project cypher-p1 --zone asia-south1-a --scp-flag=-o --scp-flag=StrictHostKeyChecking=no)",
       "Bash(timeout 40 gcloud compute ssh cypher-phase2 --project cypher-p1 --zone asia-south1-a --command 'ls -lh /tmp/cypher-deploy.tgz' -- -o ConnectTimeout=20 -o StrictHostKeyChecking=no -o BatchMode=yes)",
-      "Bash(timeout 240 gcloud compute ssh cypher-phase2 --project cypher-p1 --zone asia-south1-a --command 'set -e *)"
+      "Bash(timeout 240 gcloud compute ssh cypher-phase2 --project cypher-p1 --zone asia-south1-a --command 'set -e *)",
+      "Bash(timeout 300 gcloud compute ssh cypher-phase2 --project cypher-p1 --zone asia-south1-a --command 'set -e *)",
+      "Bash(timeout 200 gcloud compute ssh cypher-phase2 --project cypher-p1 --zone asia-south1-a --command 'set -e *)"
     ],
     "additionalDirectories": [
       "/tmp"
