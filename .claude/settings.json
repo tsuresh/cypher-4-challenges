@@ -29,7 +29,12 @@
       "Bash(CHAL_FLAG='CYPHER{h01_fix}' timeout 150 bash h01-token-relay/healthcheck.sh)",
       "Bash(CHAL_FLAG='CYPHER{i01_fix2}' timeout 90 bash i01-metadata-skim/healthcheck.sh)",
       "Bash(CHAL_FLAG='CYPHER{h01_fix2}' timeout 90 bash h01-token-relay/healthcheck.sh)",
-      "Bash(CHAL_FLAG='CYPHER{h01_fix3}' bash h01-token-relay/healthcheck.sh)"
+      "Bash(CHAL_FLAG='CYPHER{h01_fix3}' bash h01-token-relay/healthcheck.sh)",
+      "Bash(gcloud config *)",
+      "Bash(echo \"active account: $\\(gcloud config get-value account \\)\")",
+      "Bash(gcloud projects *)",
+      "Bash(gcloud compute *)",
+      "Bash(gcloud auth *)"
     ],
     "additionalDirectories": [
       "/tmp"
