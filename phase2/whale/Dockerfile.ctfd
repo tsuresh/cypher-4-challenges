@@ -1,0 +1,13 @@
+# Stock CTFd + the ctfd-whale plugin's Python dependencies.
+# The whale plugin (mounted at runtime) imports flask_apscheduler and the Docker
+# SDK, which the official ctfd/ctfd image does not ship — without these CTFd
+# crash-loops on plugin load.
+FROM ctfd/ctfd:3.8.7
+USER root
+# Install ONLY what the whale plugin needs (Flask-APScheduler + the Docker SDK),
+# pinning Flask/Werkzeug to CTFd 3.8.7's own versions so nothing gets upgraded
+# (a newer Flask removes flask.helpers.locked_cached_property and breaks flask_babel).
+# CTFd already provides redis/flask-redis, so those whale pins are NOT installed.
+RUN pip install --no-cache-dir \
+      "Flask==2.1.3" "Werkzeug==2.2.3" \
+      "Flask-APScheduler==1.11.0" "docker==6.1.3"

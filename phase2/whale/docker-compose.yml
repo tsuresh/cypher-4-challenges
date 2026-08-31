@@ -16,7 +16,12 @@
 services:
 
   ctfd:
-    image: ctfd/ctfd:3.8.7
+    # Custom image = stock CTFd + the ctfd-whale plugin's Python deps
+    # (flask_apscheduler, docker), which the stock image lacks.
+    build:
+      context: .
+      dockerfile: Dockerfile.ctfd
+    image: cypher-p2/ctfd-whale:3.8.7
     restart: unless-stopped
     environment:
       - UPLOAD_FOLDER=/var/uploads

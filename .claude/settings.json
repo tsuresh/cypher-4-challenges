@@ -41,7 +41,17 @@
       "Bash(timeout 40 gcloud compute ssh cypher-phase2 --project cypher-p1 --zone asia-south1-a --command 'ls -lh /tmp/cypher-deploy.tgz' -- -o ConnectTimeout=20 -o StrictHostKeyChecking=no -o BatchMode=yes)",
       "Bash(timeout 240 gcloud compute ssh cypher-phase2 --project cypher-p1 --zone asia-south1-a --command 'set -e *)",
       "Bash(timeout 300 gcloud compute ssh cypher-phase2 --project cypher-p1 --zone asia-south1-a --command 'set -e *)",
-      "Bash(timeout 200 gcloud compute ssh cypher-phase2 --project cypher-p1 --zone asia-south1-a --command 'set -e *)"
+      "Bash(timeout 200 gcloud compute ssh cypher-phase2 --project cypher-p1 --zone asia-south1-a --command 'set -e *)",
+      "Bash(timeout 60 gcloud compute ssh cypher-phase2 --project cypher-p1 --zone asia-south1-a --command 'cd ~/cypher *)",
+      "Bash(echo \" IPv4: $\\(curl -s --max-time 6 -4 ifconfig.me || echo none\\)\")",
+      "Bash(echo \" default: $\\(curl -s --max-time 6 ifconfig.me || echo none\\)\")",
+      "Bash(timeout 8 bash -c 'cat < /dev/null > /dev/tcp/34.14.164.225/22')",
+      "Bash(timeout 90 gcloud compute ssh cypher-phase2 --project cypher-p1 --zone asia-south1-a --command 'cd ~/cypher *)",
+      "Bash(timeout 120 gcloud compute ssh cypher-phase2 --project cypher-p1 --zone asia-south1-a --command 'cd ~/cypher/phase2/whale *)",
+      "Bash(timeout 60 gcloud compute scp phase2/run-shared.sh cypher-phase2:~/cypher/phase2/run-shared.sh --project cypher-p1 --zone asia-south1-a --scp-flag=-o --scp-flag=StrictHostKeyChecking=no)",
+      "Bash(timeout 500 gcloud compute ssh cypher-phase2 --project cypher-p1 --zone asia-south1-a --command 'cd ~/cypher *)",
+      "Bash(timeout 120 gcloud compute ssh cypher-phase2 --project cypher-p1 --zone asia-south1-a --command 'cd ~/cypher *)",
+      "Bash(timeout 560 gcloud compute ssh cypher-phase2 --project cypher-p1 --zone asia-south1-a --command 'cd ~/cypher *)"
     ],
     "additionalDirectories": [
       "/tmp"
