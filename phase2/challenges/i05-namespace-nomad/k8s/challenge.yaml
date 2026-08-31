@@ -1,0 +1,71 @@
+# i05 Namespace Nomad — the pod's ServiceAccount is bound (cross-namespace, the
+# flaw) to a Role that can read Secrets in the neighbouring `records` namespace.
+# __FLAG_B64__ is substituted at provision time. Applied per team into its own
+# app namespace; `records` is shared but each team's Secret value is unique.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: records
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: apps
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: worker
+  namespace: apps
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: patient-vault
+  namespace: records
+type: Opaque
+data:
+  flag: __FLAG_B64__
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: secret-reader
+  namespace: records
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list"]
+---
+# THE FLAW: a RoleBinding in `records` whose subject is a ServiceAccount from `apps`.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: worker-can-read-records
+  namespace: records
+subjects:
+  - kind: ServiceAccount
+    name: worker
+    namespace: apps
+roleRef:
+  kind: Role
+  name: secret-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: patient-worker
+  namespace: apps
+  labels: { app: patient-worker }
+spec:
+  serviceAccountName: worker
+  automountServiceAccountToken: true
+  containers:
+    - name: shell
+      image: curlimages/curl:8.8.0
+      command: ["sh", "-c", "sleep infinity"]
+      resources:
+        requests: { cpu: "10m", memory: "32Mi" }
+        limits:   { cpu: "100m", memory: "64Mi" }
+  restartPolicy: Always

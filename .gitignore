@@ -17,6 +17,15 @@ phase2/.data/
 **/.flag
 **/generated-flag.txt
 
+# Phase 2 generated challenge artifacts (contain encoded flags; built at provision)
+phase2/challenges/*/capture.txt
+phase2/challenges/*/capture.pcap
+phase2/challenges/*/audit-logs.tar.gz
+phase2/challenges/i04-return-to-sender/return-to-sender
+phase2/challenges/h12-serendib-machine/serendib-machine
+phase2/challenges/h12-serendib-machine/src/program.h
+phase2/challenges/_verify/
+
 # Editor / OS noise
 .DS_Store
 *.swp

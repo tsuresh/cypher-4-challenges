@@ -87,6 +87,28 @@ or import per wave.
 - Every GCP SA/role is least-privilege and resource-scoped; IAM healthchecks (as in Phase 1 07/11)
   assert the scope limits for h01/h02/h05/i01.
 
+## Implementation & verification status
+
+Every challenge now ships its infra (apps, Dockerfiles, binaries/generators, gcloud/k8s
+provisioning) plus a `healthcheck.sh` that **is** the scripted solve. Run all local ones with
+[`./verify-local.sh`](verify-local.sh).
+
+- **Solve-verified locally (build → exploit → flag):** i03, i04, h12, m03, h10, h14, h15, e02,
+  i02, h06, h08 — the exploit actually recovers the flag (crypto math, ret2win, VM lift, XXE,
+  SSTI-WAF-bypass, prototype-pollution RCE, GCM forbidden-attack forgery, audit-log chain, DNS
+  pcap). h10's GCM is validated against the NIST test vector.
+- **Mechanic-verified locally:** i01, h01 (SSRF returns/reflects the fetched body — the metadata
+  step is exercised in `LIVE=1` mode on the VM); h16 (container starts privileged with full
+  `CapEff` + mount — the `release_agent` escape fires on the cgroup-v1 finals sandbox).
+- **Code-complete, needs the live GCP/GKE sandbox to run:** e01, m01, h05, h02 (gcloud),
+  h03, i05 (kubectl). Provisioning + healthchecks written against `shared/lib/gcp.sh`; all
+  manifests/scripts pass offline validation. Their healthchecks run in the sandbox after
+  `provision.sh`.
+
+Generated per-team artifacts (binaries, `capture.*`, `audit-logs.tar.gz`, SA keys) are built at
+provision time and **gitignored** — they never enter git, and the flag is never a literal in a
+committed file.
+
 ## Build order (next deliverable)
 
 1. `phase2/whale/` — ctfd-whale + frp on the finals VM (`./gcp/bootstrap.sh --phase2-vm`).

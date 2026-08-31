@@ -1,0 +1,33 @@
+# h03 Off the Node — a low-privilege pod. Its Workload-Identity GSA is powerless;
+# the NODE's SA (reachable because the node pool exposes GCE metadata) is broader.
+# __NS__ is the per-team namespace, substituted at provision time.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: __NS__
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: app
+  namespace: __NS__
+  annotations:
+    # bound (Workload Identity) to a GSA that can do nothing useful
+    iam.gke.io/gcp-service-account: pearl-pod@__PROJECT__.iam.gserviceaccount.com
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: frontend
+  namespace: __NS__
+  labels: { app: frontend }
+spec:
+  serviceAccountName: app
+  containers:
+    - name: shell
+      image: google/cloud-sdk:slim
+      command: ["sh", "-c", "sleep infinity"]
+      resources:
+        requests: { cpu: "50m", memory: "64Mi" }
+        limits:   { cpu: "250m", memory: "256Mi" }
+  restartPolicy: Always

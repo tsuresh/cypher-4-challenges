@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(CHAL_FLAG='CYPHER{ecb_echo_ruhunu_notes}' PORT=8921 ./healthcheck.sh)",
+      "Bash([[ \"$REC\" == *\"$FLAG\"* ]])",
+      "Bash(pkill -f 'app/app.py')",
+      "Bash(CHAL_FLAG='CYPHER{ecb_echo_ruhunu_notes}' PORT=8945 bash healthcheck.sh)",
+      "Bash(cd /media/suresh/Development/Projects/cypher-4-challenges/phase2/challenges/m03-echo-chamber *)",
+      "Bash(chmod +x gen.py healthcheck.sh)",
+      "Bash(CHAL_FLAG='CYPHER{ape_ride_audit_trace_x9}' bash healthcheck.sh)",
+      "Bash(CHAL_FLAG='CYPHER{dns_tunnel_sethsuwa_exfil}' bash healthcheck.sh)",
+      "Bash(CHAL_FLAG='CYPHER{client_side_not_auth_v1}' bash -x e02-client-side-story/healthcheck.sh)",
+      "Bash(CHAL_FLAG='CYPHER{client_side_not_auth_v1}' bash e02-client-side-story/healthcheck.sh)",
+      "Bash(chmod +x h06-render-unto-ceylon/healthcheck.sh)",
+      "Bash(CHAL_FLAG='CYPHER{ssti_ceylon_v1}' bash h06-render-unto-ceylon/healthcheck.sh)",
+      "Bash(chmod +x h08-polluted-pearls/healthcheck.sh)",
+      "Bash(CHAL_FLAG='CYPHER{proto_pollution_pearl_v1}' bash h08-polluted-pearls/healthcheck.sh)",
+      "Bash(../../../.venv/bin/python app/gcm.py)",
+      "Bash(CHAL_FLAG='CYPHER{gcm_nonce_reuse_sethsuwa}' PORT=8917 bash healthcheck.sh)",
+      "Bash(chmod +x i01-metadata-skim/healthcheck.sh e01-bucket-list/*.sh m01-overshared/*.sh h05-state-of-affairs/*.sh h02-deploy-your-privilege/*.sh)",
+      "Bash(bash i01-metadata-skim/healthcheck.sh)",
+      "Bash(timeout 150 bash i01-metadata-skim/healthcheck.sh)",
+      "Bash(chmod +x exploit.sh healthcheck.sh)",
+      "Bash(bash healthcheck.sh)",
+      "Bash(chmod +x phase2/challenges/*/provision.sh)",
+      "Bash(awk -F/ '{print $1}')"
+    ],
+    "additionalDirectories": [
+      "/tmp"
+    ]
+  }
+}
