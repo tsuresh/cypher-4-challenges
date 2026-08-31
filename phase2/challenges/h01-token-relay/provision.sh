@@ -11,7 +11,9 @@ source "$REPO_ROOT/shared/lib/gcp.sh"
 : "${CHAL_FLAG:?CHAL_FLAG required}"
 
 SECRET="ape-ride-crownjewels"
-RUNNER="webhook-runner"; RELAY="relay"; VAULT="vault-reader"
+# NOTE: GCP service-account IDs must be 6-30 chars — "relay" (5) is invalid, so the
+# relay SA id is "ape-relay". The narrative name stays "relay".
+RUNNER="webhook-runner"; RELAY="ape-relay"; VAULT="vault-reader"
 
 step "h01: secret + chain of least-privilege SAs"
 ensure_apis iamcredentials.googleapis.com secretmanager.googleapis.com
