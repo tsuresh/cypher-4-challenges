@@ -14,6 +14,8 @@ from flask import Flask, request, jsonify
 import gcm
 
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = 64 * 1024      # cap request body (DoS)
+MAX_HEX = 8192                                     # cap ct/tag/nonce lengths (GHASH is O(blocks))
 KEY = os.urandom(16)
 NONCE = os.urandom(12)                 # FIXED for the process — reused on every call
 FLAG = os.environ.get("FLAG", "CYPHER{missing}")
@@ -25,8 +27,11 @@ def index():
 
 @app.get("/encrypt")
 def encrypt():
+    h = request.args.get("data", "")
+    if len(h) > MAX_HEX:
+        return jsonify(error="input too long"), 413
     try:
-        data = bytes.fromhex(request.args.get("data", ""))
+        data = bytes.fromhex(h)
     except ValueError:
         return jsonify(error="hex please"), 400
     block = (data + b"\x00" * 16)[:16]          # exactly one 16-byte block
@@ -37,6 +42,8 @@ def encrypt():
 def submit():
     j = request.get_json(force=True, silent=True) or {}
     try:
+        if any(len(str(j.get(k, ""))) > MAX_HEX for k in ("nonce", "ct", "tag")):
+            return jsonify(error="input too long"), 413
         nonce = bytes.fromhex(j["nonce"]); ct = bytes.fromhex(j["ct"]); tag = bytes.fromhex(j["tag"])
         pt = gcm.gcm_decrypt(KEY, nonce, ct, tag)     # raises on bad tag
     except Exception as e:

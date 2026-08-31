@@ -7,13 +7,14 @@ load_env
 : "${CHAL_FLAG:?CHAL_FLAG required}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+TEAM="${TEAM:-team01}"
 FLAG_B64="$(printf '%s' "$CHAL_FLAG" | base64 -w0)"
 TMP="$(mktemp)"; trap 'rm -f "$TMP"' EXIT
-sed "s|__FLAG_B64__|${FLAG_B64}|" "$HERE/k8s/challenge.yaml" > "$TMP"
+sed -e "s|__FLAG_B64__|${FLAG_B64}|" -e "s|__TEAM__|${TEAM}|g" "$HERE/k8s/challenge.yaml" > "$TMP"
 
-step "i05: applying RBAC challenge manifests"
+step "i05: applying RBAC challenge manifests for team ${TEAM}"
 kubectl apply -f "$TMP" >/dev/null
-kubectl -n apps wait --for=condition=Ready pod/patient-worker --timeout=120s >/dev/null || true
+kubectl -n "apps-${TEAM}" wait --for=condition=Ready pod/patient-worker --timeout=120s >/dev/null || true
 
-ok "i05: provisioned. Foothold: kubectl -n apps exec patient-worker"
-echo "CONNECT=Shell into the apps/patient-worker pod; its token can read secrets in the records namespace."
+ok "i05: provisioned. Foothold: kubectl -n apps-${TEAM} exec patient-worker"
+echo "CONNECT=Shell into the apps-${TEAM}/patient-worker pod; its token can read the secret in records-${TEAM}."

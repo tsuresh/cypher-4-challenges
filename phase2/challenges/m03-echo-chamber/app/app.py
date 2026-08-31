@@ -25,6 +25,8 @@ def index():
 @app.get("/encrypt")
 def encrypt():
     hexdata = request.args.get("data", "")
+    if len(hexdata) > 8192:                          # cap input (memory DoS)
+        return jsonify(error="input too long"), 413
     try:
         data = bytes.fromhex(hexdata) if hexdata else b""
     except ValueError:

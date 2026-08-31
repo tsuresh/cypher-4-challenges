@@ -23,7 +23,13 @@
       "Bash(chmod +x exploit.sh healthcheck.sh)",
       "Bash(bash healthcheck.sh)",
       "Bash(chmod +x phase2/challenges/*/provision.sh)",
-      "Bash(awk -F/ '{print $1}')"
+      "Bash(awk -F/ '{print $1}')",
+      "Bash(../../.venv/bin/python -c \"import sys,yaml; d=list\\(yaml.safe_load_all\\(sys.stdin\\)\\); print\\([ \\(x['kind'], x['metadata'].get\\('namespace','-'\\)\\) for x in d]\\); rr=[x for x in d if x['kind']=='Role'][0]['rules'][0]; print\\('Role scope:', rr.get\\('verbs'\\), rr.get\\('resourceNames'\\)\\)\")",
+      "Bash(CHAL_FLAG='CYPHER{i01_fix}' timeout 150 bash i01-metadata-skim/healthcheck.sh)",
+      "Bash(CHAL_FLAG='CYPHER{h01_fix}' timeout 150 bash h01-token-relay/healthcheck.sh)",
+      "Bash(CHAL_FLAG='CYPHER{i01_fix2}' timeout 90 bash i01-metadata-skim/healthcheck.sh)",
+      "Bash(CHAL_FLAG='CYPHER{h01_fix2}' timeout 90 bash h01-token-relay/healthcheck.sh)",
+      "Bash(CHAL_FLAG='CYPHER{h01_fix3}' bash h01-token-relay/healthcheck.sh)"
     ],
     "additionalDirectories": [
       "/tmp"

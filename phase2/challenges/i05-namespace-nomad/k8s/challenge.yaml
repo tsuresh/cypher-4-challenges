@@ -1,28 +1,27 @@
-# i05 Namespace Nomad — the pod's ServiceAccount is bound (cross-namespace, the
-# flaw) to a Role that can read Secrets in the neighbouring `records` namespace.
-# __FLAG_B64__ is substituted at provision time. Applied per team into its own
-# app namespace; `records` is shared but each team's Secret value is unique.
+# i05 Namespace Nomad — per-team pair of namespaces so a team can only ever reach
+# its OWN records namespace (no cross-team secret enumeration). __TEAM__ and
+# __FLAG_B64__ are substituted at provision time.
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: records
+  name: records-__TEAM__
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: apps
+  name: apps-__TEAM__
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: worker
-  namespace: apps
+  namespace: apps-__TEAM__
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   name: patient-vault
-  namespace: records
+  namespace: records-__TEAM__
 type: Opaque
 data:
   flag: __FLAG_B64__
@@ -31,22 +30,24 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: secret-reader
-  namespace: records
+  namespace: records-__TEAM__
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
-    verbs: ["get", "list"]
+    resourceNames: ["patient-vault"]     # scoped to the one secret (no enumeration)
+    verbs: ["get"]
 ---
-# THE FLAW: a RoleBinding in `records` whose subject is a ServiceAccount from `apps`.
+# THE FLAW: a RoleBinding in the team's records ns whose subject is a SA from the
+# team's apps ns (cross-namespace, but same team -> no cross-team exposure).
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: worker-can-read-records
-  namespace: records
+  namespace: records-__TEAM__
 subjects:
   - kind: ServiceAccount
     name: worker
-    namespace: apps
+    namespace: apps-__TEAM__
 roleRef:
   kind: Role
   name: secret-reader
@@ -56,7 +57,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: patient-worker
-  namespace: apps
+  namespace: apps-__TEAM__
   labels: { app: patient-worker }
 spec:
   serviceAccountName: worker

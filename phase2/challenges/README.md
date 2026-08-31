@@ -77,6 +77,14 @@ or import per wave.
   i03, h05, h14, h02, h10.
 - **Static attachment** (no live infra): i03, h12, h14, h15 (files listed in each `challenge.yml`).
 
+## Security & DoS hardening
+
+Full review in [../SECURITY.md](../SECURITY.md). In-code fixes (verified): SSRF allowlist +
+response cap (i01/h01), XXE billion-laughs mitigation (i02), oracle input caps (m03/h10),
+`socat max-children` (i04), per-team-namespaced RBAC (i05). Deploy-time musts: per-team
+container resource limits (`--pids-limit`/`--memory`), egress isolation, i01/h01 on dedicated
+scoped-SA VMs, h03 per-team node pool, h16 nested sandbox, venue-only firewall, h02 cost quotas.
+
 ## Safety notes carried into the build
 
 - **h01** is **semi-blind** (the SSRF app reflects the fetched body) so token exfil is fair in-window.

@@ -7,6 +7,7 @@ from flask import Flask, request, Response
 from lxml import etree
 
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = 64 * 1024      # cap body size (large-doc DoS)
 
 @app.get("/")
 def index():
@@ -19,9 +20,12 @@ def index():
 def submit():
     raw = request.get_data()
     try:
-        # BUG: external entities + DTD loading enabled -> XXE (file:// still resolves)
+        # BUG (intended): external entities + DTD loading enabled -> XXE; file://
+        # still resolves. huge_tree stays OFF so lxml's entity-expansion limit blocks
+        # billion-laughs / exponential-expansion DoS, and no_network blocks SSRF via
+        # external DTDs. The simple file-read XXE the challenge needs is unaffected.
         parser = etree.XMLParser(resolve_entities=True, load_dtd=True,
-                                 no_network=True, huge_tree=True)
+                                 no_network=True, huge_tree=False)
         root = etree.fromstring(raw, parser)
     except Exception as e:
         return Response(f"parse error: {e}\n", status=400, mimetype="text/plain")
