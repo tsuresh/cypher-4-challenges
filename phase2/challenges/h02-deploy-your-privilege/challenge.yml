@@ -1,0 +1,37 @@
+name: "Deploy Your Privilege"
+author: SCTF
+category: Cloud / IAM Privilege Escalation
+description: |
+  Ruhunu Bank gave its deployment robot a "custom role" so it could ship code. Read the role and
+  it looks tame — it can't open the vault. What it *can* do is decide which identity the code it
+  ships will run as.
+
+  You can't read the secret. But you can hand your code the keys to someone who can, and let them
+  read it for you.
+
+  Connect: __CONNECT__
+
+value: 500
+type: dynamic
+extra:
+  initial: 500
+  minimum: 200
+  decay: 8
+
+connection_info: __CONNECT__
+
+files:
+  - deployer-sa-key.json
+
+flags:
+  - __FLAG__
+
+tags:
+  - cloud
+  - iam
+  - actas
+  - privilege-escalation
+  - insane
+
+state: visible
+version: "0.1"

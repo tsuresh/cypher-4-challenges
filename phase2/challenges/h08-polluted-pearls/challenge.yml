@@ -1,0 +1,37 @@
+name: "Polluted Pearls"
+author: SCTF
+category: Web / Prototype Pollution
+description: |
+  Pearl Telecom's dashboard lets you save preferences, and helpfully merges whatever settings you
+  send into its own configuration. It isn't picky about which keys you set.
+
+  Poison the well on one page, and something on a completely different page will drink from it —
+  and run whatever you left behind.
+
+  Connect: __CONNECT__
+
+value: 500
+type: dynamic
+extra:
+  initial: 500
+  minimum: 200
+  decay: 8
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+hints:
+  - content: "The crash you can cause on one route is the primitive for another. Confirm you can set inherited properties on Object.prototype, then find the render/exec that trusts an option it never set."
+    cost: 100
+
+tags:
+  - web
+  - prototype-pollution
+  - rce
+  - nodejs
+  - insane
+
+state: visible
+version: "0.1"

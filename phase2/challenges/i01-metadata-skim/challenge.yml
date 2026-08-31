@@ -1,0 +1,34 @@
+name: "Metadata Skim"
+author: SCTF
+category: Cloud / SSRF
+description: |
+  Ape Ride's document previewer fetches a URL you give it — server-side, from inside Google
+  Cloud. You already know cloud servers expose an internal metadata service. This time reading a
+  value isn't enough.
+
+  Make the app fetch the machine's own credentials, then use them the way the machine would — to
+  reach the one thing they're allowed to touch.
+
+  Connect: __CONNECT__
+
+value: 300
+type: dynamic
+extra:
+  initial: 300
+  minimum: 120
+  decay: 15
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+tags:
+  - cloud
+  - ssrf
+  - metadata
+  - token
+  - intermediate
+
+state: visible
+version: "0.1"

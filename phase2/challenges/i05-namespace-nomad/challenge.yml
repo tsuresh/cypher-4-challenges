@@ -1,0 +1,33 @@
+name: "Namespace Nomad"
+author: SCTF
+category: Container / Kubernetes
+description: |
+  Sethsuwa Health runs its services on Kubernetes. You've got a foothold in one pod — nothing
+  special, just a patient-facing worker. But the identity that pod carries was handed a little
+  more reach than it needs.
+
+  Ask the cluster what your token is allowed to do, then wander one namespace over and read what
+  it shouldn't.
+
+  Cluster access: __CONNECT__
+
+value: 300
+type: dynamic
+extra:
+  initial: 300
+  minimum: 120
+  decay: 15
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+tags:
+  - kubernetes
+  - rbac
+  - container
+  - intermediate
+
+state: visible
+version: "0.1"

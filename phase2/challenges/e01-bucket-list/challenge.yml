@@ -1,0 +1,31 @@
+name: "Bucket List"
+author: SCTF
+category: Cloud Storage / Recon
+description: |
+  Arugam Waves, a surf-cam startup, moved its media to a cloud bucket and left it open to the
+  world — not just readable, but listable. Most of it is surf footage. One object is not.
+
+  List the bucket, find the thing that doesn't belong, and read it.
+
+  Bucket: __CONNECT__
+
+value: 200
+type: dynamic
+extra:
+  initial: 200
+  minimum: 80
+  decay: 20
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+tags:
+  - cloud
+  - storage
+  - recon
+  - easy
+
+state: visible
+version: "0.1"

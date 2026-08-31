@@ -1,0 +1,34 @@
+name: "Broadcast Blunder"
+author: SCTF
+category: Crypto / RSA
+description: |
+  Ruhunu Bank sent the same short notice to three partners, each with their own RSA key — and a
+  very small public exponent, with no padding at all.
+
+  One copy tells you nothing. Three copies of the same message, together, tell you everything.
+
+  Files attached: __CONNECT__
+
+value: 300
+type: dynamic
+extra:
+  initial: 300
+  minimum: 120
+  decay: 15
+
+connection_info: __CONNECT__
+
+files:
+  - capture.txt
+
+flags:
+  - __FLAG__
+
+tags:
+  - crypto
+  - rsa
+  - hastad
+  - intermediate
+
+state: visible
+version: "0.1"

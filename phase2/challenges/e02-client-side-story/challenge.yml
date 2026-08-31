@@ -1,0 +1,32 @@
+name: "Client Side Story"
+author: SCTF
+category: Web / Access Control
+description: |
+  Sethsuwa Health's patient portal is a single-page app. There's an "Admin" button, but it's
+  greyed out for you — you're just a patient. The button may be disabled, but the code behind
+  it still knows what it would do.
+
+  Read what the app ships to your browser, find the door it hides, and open it yourself.
+
+  Portal: __CONNECT__
+
+value: 200
+type: dynamic
+extra:
+  initial: 200
+  minimum: 80
+  decay: 20
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+tags:
+  - web
+  - client-side
+  - access-control
+  - easy
+
+state: visible
+version: "0.1"

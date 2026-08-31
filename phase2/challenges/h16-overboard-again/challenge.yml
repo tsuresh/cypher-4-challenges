@@ -1,0 +1,38 @@
+name: "Overboard, Again"
+author: SCTF
+category: Container Escape
+description: |
+  Pearl Telecom runs a "sandboxed" build container. It is not as sandboxed as they think — it was
+  started with the kind of privileges that blur the line between the container and the machine
+  under it.
+
+  The flag isn't in your container. It's on the host you're not supposed to be able to touch.
+  Convince the kernel to run your code out there and bring it back.
+
+  Connect: __CONNECT__
+
+value: 500
+type: dynamic
+extra:
+  initial: 500
+  minimum: 200
+  decay: 8
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+hints:
+  - content: "You are more privileged than you look; the kernel will run something for you on the host. Look at what a privileged container can do with cgroups and notify_on_release / release_agent."
+    cost: 100
+
+tags:
+  - container
+  - escape
+  - cgroups
+  - privileged
+  - insane
+
+state: visible
+version: "0.1"

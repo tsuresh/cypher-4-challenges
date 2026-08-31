@@ -1,0 +1,36 @@
+name: "Serendib Machine"
+author: SCTF
+category: Reverse Engineering
+description: |
+  Pearl Telecom ships a little licence-key checker. Open it up and you won't find the check —
+  you'll find a machine that runs a program written in an instruction set that doesn't exist on
+  any real CPU.
+
+  Learn the machine's language, read the program it runs, and work out the only input it will
+  accept.
+
+  File attached: __CONNECT__
+
+value: 400
+type: dynamic
+extra:
+  initial: 400
+  minimum: 150
+  decay: 12
+
+connection_info: __CONNECT__
+
+files:
+  - serendib-machine
+
+flags:
+  - __FLAG__
+
+tags:
+  - rev
+  - vm
+  - bytecode
+  - hard
+
+state: visible
+version: "0.1"

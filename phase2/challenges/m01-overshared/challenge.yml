@@ -1,0 +1,32 @@
+name: "Overshared"
+author: SCTF
+category: Cloud Storage / IAM
+description: |
+  Ceylon Kade locked its reconciliation bucket down — anonymous users get Access Denied, and
+  the team called it a day. But "not anonymous" is not the same as "private".
+
+  Some cloud shares open the door to any authenticated identity, not just the company's. Find the
+  right kind of key to hold, and the bucket opens.
+
+  Bucket: __CONNECT__
+
+value: 250
+type: dynamic
+extra:
+  initial: 250
+  minimum: 100
+  decay: 15
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+tags:
+  - cloud
+  - storage
+  - iam
+  - medium
+
+state: visible
+version: "0.1"

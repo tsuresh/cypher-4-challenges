@@ -1,0 +1,33 @@
+name: "Echo Chamber"
+author: SCTF
+category: Crypto / AES-ECB
+description: |
+  Ruhunu Bank's "secure notes" service encrypts whatever you send it, glues a secret onto the
+  end, and hands you back the ciphertext. It reuses the same key every time, and its cipher mode
+  treats every block on its own.
+
+  Whatever you put in echoes back in a very particular way. Use that to read the secret it keeps
+  appending.
+
+  Connect: __CONNECT__
+
+value: 250
+type: dynamic
+extra:
+  initial: 250
+  minimum: 100
+  decay: 15
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+tags:
+  - crypto
+  - aes
+  - ecb
+  - medium
+
+state: visible
+version: "0.1"

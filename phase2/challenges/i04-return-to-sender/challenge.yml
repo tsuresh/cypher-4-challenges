@@ -1,0 +1,35 @@
+name: "Return to Sender"
+author: SCTF
+category: Pwn / Binary Exploitation
+description: |
+  Pearl Telecom's legacy SMS gateway takes a message over the network and copies it into a
+  buffer that is far too small — and never checks the length. Somewhere in the binary is a
+  function that was never supposed to run.
+
+  Overrun the buffer, redirect execution to the code that shouldn't be reachable.
+
+  Connect: __CONNECT__
+
+value: 300
+type: dynamic
+extra:
+  initial: 300
+  minimum: 120
+  decay: 15
+
+connection_info: __CONNECT__
+
+files:
+  - return-to-sender
+
+flags:
+  - __FLAG__
+
+tags:
+  - pwn
+  - bof
+  - ret2win
+  - intermediate
+
+state: visible
+version: "0.1"

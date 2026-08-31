@@ -1,0 +1,34 @@
+name: "State of Affairs"
+author: SCTF
+category: Cloud / IaC Secrets
+description: |
+  LankaGov's platform team builds everything with infrastructure-as-code. Somewhere a pipeline
+  left its working files where it shouldn't have — and those files remember more than anyone
+  intended, in plain text.
+
+  Find what the pipeline left behind, read the credential hiding inside it, and follow that
+  credential to exactly the one thing it can still open.
+
+  Storage: __CONNECT__
+
+value: 400
+type: dynamic
+extra:
+  initial: 400
+  minimum: 150
+  decay: 12
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+tags:
+  - cloud
+  - terraform
+  - secrets
+  - iam
+  - hard
+
+state: visible
+version: "0.1"

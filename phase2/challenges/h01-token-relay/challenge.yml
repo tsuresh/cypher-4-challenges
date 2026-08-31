@@ -1,0 +1,38 @@
+name: "Token Relay"
+author: SCTF
+category: Cloud / IAM Privilege Escalation
+description: |
+  Ape Ride's webhook validator checks a URL for you by fetching it — and it shows you what came
+  back. From inside the cloud, that's a door to the machine's own credentials.
+
+  But the identity you can steal can't read the prize directly. It can only *become* another
+  identity — which can become another. Follow the chain to the end and read what the last one
+  guards.
+
+  Connect: __CONNECT__
+
+value: 500
+type: dynamic
+extra:
+  initial: 500
+  minimum: 200
+  decay: 8
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+hints:
+  - content: "The identity you land on is not the one that reads the secret. List who each service account is allowed to impersonate (get-iam-policy), and chain the hops."
+    cost: 100
+
+tags:
+  - cloud
+  - ssrf
+  - iam
+  - impersonation
+  - insane
+
+state: visible
+version: "0.1"

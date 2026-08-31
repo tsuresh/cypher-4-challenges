@@ -1,0 +1,36 @@
+name: "Once Is Enough"
+author: SCTF
+category: Crypto / AES-GCM
+description: |
+  Sethsuwa Health's note service uses authenticated encryption — the modern, "unbreakable" kind.
+  It also uses the very same one-time value every single time it encrypts.
+
+  That mode has exactly one rule, and it's being broken on every message. Two notes are all you
+  need to stop asking the server nicely and start forging your own.
+
+  Connect: __CONNECT__
+
+value: 500
+type: dynamic
+extra:
+  initial: 500
+  minimum: 200
+  decay: 8
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+hints:
+  - content: "GCM's one rule was broken; the tag is now forgeable. Two ciphertexts under the same nonce let you solve for the GHASH key H (the 'forbidden attack'), then forge a valid tag for role=admin."
+    cost: 100
+
+tags:
+  - crypto
+  - aes-gcm
+  - nonce-reuse
+  - insane
+
+state: visible
+version: "0.1"

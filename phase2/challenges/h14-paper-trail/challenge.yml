@@ -1,0 +1,37 @@
+name: "Paper Trail"
+author: SCTF
+category: Forensics / Cloud Logs
+description: |
+  Someone walked through Ape Ride's cloud project and helped themselves. They're gone now, but
+  the project wrote down everything they did.
+
+  Here is the audit log. The flag isn't sitting in it waiting to be found — you have to follow the
+  attacker from the front door to the vault and read the story their actions tell. Reassemble it
+  the way the mission board describes.
+
+  Logs attached: __CONNECT__
+
+value: 400
+type: dynamic
+extra:
+  initial: 400
+  minimum: 150
+  decay: 12
+
+connection_info: __CONNECT__
+
+files:
+  - audit-logs.tar.gz
+
+flags:
+  - __FLAG__
+
+tags:
+  - forensics
+  - cloud
+  - logging
+  - dfir
+  - hard
+
+state: visible
+version: "0.1"

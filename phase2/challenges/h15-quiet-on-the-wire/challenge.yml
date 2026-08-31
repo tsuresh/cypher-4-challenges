@@ -1,0 +1,36 @@
+name: "Quiet on the Wire"
+author: SCTF
+category: Forensics / Network
+description: |
+  Sethsuwa Health caught a workstation behaving oddly and grabbed a packet capture. On the
+  surface there's nothing to see — just a lot of ordinary-looking name lookups.
+
+  That's the trick. Something left the building one small question at a time. Put the pieces back
+  in order and peel back what's underneath.
+
+  Capture attached: __CONNECT__
+
+value: 400
+type: dynamic
+extra:
+  initial: 400
+  minimum: 150
+  decay: 12
+
+connection_info: __CONNECT__
+
+files:
+  - capture.pcap
+
+flags:
+  - __FLAG__
+
+tags:
+  - forensics
+  - pcap
+  - dns-tunnel
+  - dfir
+  - hard
+
+state: visible
+version: "0.1"

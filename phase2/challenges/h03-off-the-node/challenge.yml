@@ -1,0 +1,34 @@
+name: "Off the Node"
+author: SCTF
+category: Cloud / Kubernetes
+description: |
+  Pearl Telecom runs on GKE and did the modern thing — each workload gets its own tightly scoped
+  cloud identity. Your pod's identity can barely do a thing. But your pod isn't the only identity
+  on that machine.
+
+  The node underneath you carries its own credentials, and they're not so tightly held. Get off
+  your pod's identity and onto the node's.
+
+  Cluster access: __CONNECT__
+
+value: 400
+type: dynamic
+extra:
+  initial: 400
+  minimum: 150
+  decay: 12
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+tags:
+  - cloud
+  - kubernetes
+  - gke
+  - workload-identity
+  - hard
+
+state: visible
+version: "0.1"

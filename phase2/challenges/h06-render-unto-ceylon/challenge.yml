@@ -1,0 +1,34 @@
+name: "Render Unto Ceylon"
+author: SCTF
+category: Web / SSTI
+description: |
+  Ceylon Kade lets you design your own invoice: type a template, hit preview, and the server
+  fills in your order details and renders it. A filter sits in front, swatting away the obvious
+  attacks.
+
+  The filter blocks the words everyone tries first. It does not block the idea behind them. Get
+  the server to run your code and read the file it's guarding.
+
+  Connect: __CONNECT__
+
+value: 400
+type: dynamic
+extra:
+  initial: 400
+  minimum: 150
+  decay: 12
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+tags:
+  - web
+  - ssti
+  - rce
+  - waf-bypass
+  - hard
+
+state: visible
+version: "0.1"

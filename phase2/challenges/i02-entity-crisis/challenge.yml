@@ -1,0 +1,32 @@
+name: "Entity Crisis"
+author: SCTF
+category: Web / XXE
+description: |
+  LankaGov's e-forms gateway still speaks XML, and its parser is a little too trusting about
+  what an XML document is allowed to pull in.
+
+  Submit a form the way the gateway expects — then teach its parser to read something it was
+  never meant to hand back.
+
+  Connect: __CONNECT__
+
+value: 300
+type: dynamic
+extra:
+  initial: 300
+  minimum: 120
+  decay: 15
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+tags:
+  - web
+  - xxe
+  - xml
+  - intermediate
+
+state: visible
+version: "0.1"
