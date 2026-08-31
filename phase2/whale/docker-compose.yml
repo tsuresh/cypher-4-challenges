@@ -1,0 +1,106 @@
+# phase2/whale/docker-compose.yml — Finals platform: CTFd + ctfd-whale + frp.
+#
+# Runs on the finals VM (cypher-phase2). Brings up CTFd with the first_blood and
+# ctfd-whale plugins, MariaDB, Redis, an frp server (frps) for per-team instance
+# routing, and a Caddy TLS proxy. Per-team challenge containers are spawned ON
+# DEMAND by ctfd-whale from the images built by ../build-images.sh.
+#
+#   cd phase2/whale && docker compose --env-file ../../.env up -d
+#
+# PREREQUISITE: clone the whale plugin once (build-images.sh / RUNBOOK does this):
+#   git clone https://github.com/frankli0324/CTFd-Whale \
+#     ../../shared/ctfd-base/plugins/ctfd_whale
+#
+# Whale settings (docker socket, frp, image limits) are configured after first
+# boot — see ./WHALE.md.
+services:
+
+  ctfd:
+    image: ctfd/ctfd:3.8.7
+    restart: unless-stopped
+    environment:
+      - UPLOAD_FOLDER=/var/uploads
+      - DATABASE_URL=mysql+pymysql://ctfd:${CTFD_DB_PASSWORD:-ctfd}@db/ctfd
+      - REDIS_URL=redis://cache:6379
+      - WORKERS=4
+      - SECRET_KEY=${CTFD_SECRET_KEY:-}          # provision.sh generates & persists one
+      - REVERSE_PROXY=true
+      - FIRST_BLOOD_BONUS=${FIRST_BLOOD_BONUS:-50}
+      # ctfd-whale talks to the host Docker daemon over the mounted socket:
+      - DOCKER_URL=unix:///var/run/docker.sock
+    ports:
+      - "127.0.0.1:8000:8000"                    # local-only; admin bootstrap + Caddy upstream
+    volumes:
+      - ctfd_uploads:/var/uploads
+      - ctfd_logs:/var/log/CTFd
+      - ../../shared/ctfd-base/plugins/first_blood:/opt/CTFd/CTFd/plugins/first_blood:ro
+      - ../../shared/ctfd-base/plugins/ctfd_whale:/opt/CTFd/CTFd/plugins/ctfd_whale:ro
+      # ctfd-whale spawns per-team containers via the host Docker daemon:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on: [db, cache, frps]
+    networks: [platform, frp]
+
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    environment:
+      - MARIADB_ROOT_PASSWORD=${CTFD_DB_ROOT_PASSWORD:-root}
+      - MARIADB_USER=ctfd
+      - MARIADB_PASSWORD=${CTFD_DB_PASSWORD:-ctfd}
+      - MARIADB_DATABASE=ctfd
+    command: [mysqld, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci,
+              --wait_timeout=28800, --log-warnings=0]
+    volumes: [ctfd_db:/var/lib/mysql]
+    networks: [platform]
+
+  cache:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes: [ctfd_redis:/data]
+    networks: [platform]
+
+  # frp server: per-team challenge containers run an frpc that registers with this
+  # frps, which exposes each on a port in FRP_PORT_RANGE (opened by the firewall).
+  frps:
+    image: fatedier/frps:v0.58.1
+    restart: unless-stopped
+    command: ["-c", "/etc/frp/frps.ini"]
+    volumes:
+      - ./frps.ini:/etc/frp/frps.ini:ro
+    ports:
+      - "${FRP_BIND_PORT:-7000}:7000"                                  # frpc control
+      - "${FRP_PORT_RANGE_START:-10000}-${FRP_PORT_RANGE_END:-10100}:${FRP_PORT_RANGE_START:-10000}-${FRP_PORT_RANGE_END:-10100}"
+    networks: [frp]
+
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      - BASE_DOMAIN=${BASE_DOMAIN}
+      - ACME_EMAIL=${ALERT_EMAIL}
+    volumes:
+      - ../../shared/proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [ctfd]
+    networks: [platform]
+
+volumes:
+  ctfd_uploads:
+  ctfd_logs:
+  ctfd_db:
+  ctfd_redis:
+  caddy_data:
+  caddy_config:
+
+networks:
+  platform:
+    name: cypher-p2-platform
+  frp:
+    name: cypher-p2-frp
+  # ctfd-whale attaches per-team containers to this network (configured in the
+  # whale settings as the "container network"). Isolated from the platform.
+  whale:
+    name: cypher-p2-whale
+    internal: true

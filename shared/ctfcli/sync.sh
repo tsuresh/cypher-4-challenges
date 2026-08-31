@@ -18,7 +18,7 @@ PHASE="${1:?usage: sync.sh <phase1|phase2>}"
 
 case "$PHASE" in
   phase1) ROOTS=("$REPO_ROOT/phase1/challenges") ;;
-  phase2) ROOTS=("$REPO_ROOT/phase2/mission" "$REPO_ROOT/phase2/standalone") ;;
+  phase2) ROOTS=("$REPO_ROOT/phase2/challenges") ;;
   *) die "Unknown phase: $PHASE" ;;
 esac
 
