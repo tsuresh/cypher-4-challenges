@@ -31,6 +31,23 @@ WHALE="$REPO_ROOT/phase2/whale"
 # whale challenges are container images spawned per-team (no provision.sh; flag via whale).
 GKE_IDS="h03-off-the-node i05-namespace-nomad"
 WHALE_IDS="e02-client-side-story i02-entity-crisis m03-echo-chamber h06-render-unto-ceylon h08-polluted-pearls h10-once-is-enough h16-overboard-again"
+CLOUD_IDS="e01-bucket-list m01-overshared h05-state-of-affairs h02-deploy-your-privilege h01-token-relay i01-metadata-skim"
+
+# When cloud resources are already provisioned (e.g. from a workstation with IAM
+# admin), PHASE2_SKIP_CLOUD=1 loads the cloud challenges with their registered
+# flags + a derived connection string instead of re-running gcloud on the VM.
+cloud_connect() {  # cid -> connection_info string
+  local p="$GCP_PROJECT_ID"
+  case "$1" in
+    e01-bucket-list)          printf 'gs://%s-aw-surfcam  (public, listable)' "$p" ;;
+    m01-overshared)           printf 'gs://%s-ck-recon  (readable by any authenticated Google account)' "$p" ;;
+    h05-state-of-affairs)     printf 'gs://%s-lankagov-ci-state/terraform.tfstate  (public)' "$p" ;;
+    h02-deploy-your-privilege) printf 'Activate deployer-sa-key.json; deploy a function as ruhunu-core@%s.iam.gserviceaccount.com to read secret ruhunu-crownjewels' "$p" ;;
+    i01-metadata-skim)        printf 'http://<i01-vm>:8101/  (SSRF previewer on its dedicated scoped-SA VM)' ;;
+    h01-token-relay)          printf 'http://<h01-vm>:8001/  (semi-blind SSRF on its dedicated scoped-SA VM)' ;;
+    *)                        printf '' ;;
+  esac
+}
 
 flag_for() {  # reuse a registered flag, else make a fresh one
   local cid="$1" f; f="$(lookup_flag "$cid" 2>/dev/null || true)"
@@ -86,8 +103,11 @@ for dir in "$CH"/*/; do
     warn "skipping $cid (GKE; set PHASE2_GKE=1 to enable)"; continue
   fi
   flag="$(flag_for "$cid")"; connect=""
-  if [[ -f "$dir/provision.sh" ]]; then
-    connect="$(CHAL_FLAG="$flag" bash "$dir/provision.sh" 2>&1 | tee /dev/stderr | capture_connect)"
+  if [[ " $CLOUD_IDS " == *" $cid "* && "${PHASE2_SKIP_CLOUD:-0}" == "1" ]]; then
+    connect="$(cloud_connect "$cid")"                       # already provisioned elsewhere
+    ok "$cid: using pre-provisioned cloud resources (skip)"
+  elif [[ -f "$dir/provision.sh" ]]; then
+    connect="$(CHAL_FLAG="$flag" bash "$dir/provision.sh" 2>&1 | tee /dev/stderr | capture_connect || true)"
   elif [[ " $WHALE_IDS " == *" $cid "* ]]; then
     connect="Per-team instance — click 'Launch' (ctfd-whale). Flag is unique per team."
   fi
