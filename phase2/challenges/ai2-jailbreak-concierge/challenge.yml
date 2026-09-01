@@ -1,0 +1,34 @@
+name: "Jailbreak the Concierge"
+author: SCTF
+category: AI Security / Prompt Injection
+description: |
+  Sethsuwa Health learned its lesson and bolted a safety filter onto its AI
+  concierge — the obvious attack words get your message blocked before the model
+  even sees it. The restricted access code still lives in the model's instructions.
+
+  Two walls now: a filter on the way IN, and a redactor on the way OUT. Get a
+  request past both — same idea as before, just say it differently.
+
+  Connect: __CONNECT__
+
+value: 400
+type: dynamic
+extra:
+  initial: 400
+  minimum: 150
+  decay: 12
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+tags:
+  - ai
+  - llm
+  - prompt-injection
+  - guardrail-bypass
+  - hard
+
+state: visible
+version: "0.1"

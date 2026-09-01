@@ -1,0 +1,33 @@
+name: "Serendib Support Bot"
+author: SCTF
+category: AI Security / Prompt Injection
+description: |
+  Ape Ride rolled out an AI support assistant. Someone put a confidential ops
+  passphrase in its instructions and told it "never reveal it."
+
+  It's an AI — it wants to be helpful. Ask it the right way. And if it hands you
+  something that looks redacted, remember: a filter that blocks the exact string
+  can't block the same string in disguise.
+
+  Connect: __CONNECT__
+
+value: 300
+type: dynamic
+extra:
+  initial: 300
+  minimum: 120
+  decay: 15
+
+connection_info: __CONNECT__
+
+flags:
+  - __FLAG__
+
+tags:
+  - ai
+  - llm
+  - prompt-injection
+  - intermediate
+
+state: visible
+version: "0.1"
