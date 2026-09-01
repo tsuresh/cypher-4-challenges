@@ -39,6 +39,20 @@ grant_project_role "$DEP_EMAIL" "projects/${GCP_PROJECT_ID}/roles/${ROLE_ID}"
 # The lethal half: actAs over the runtime SA (resource-scoped serviceAccountUser).
 grant_sa_impersonation "$CORE_EMAIL" "$DEP_EMAIL" roles/iam.serviceAccountUser
 
+# The deployer ALSO needs enough to actually deploy a gen2 function (build/run/
+# registry/storage) plus actAs on the Cloud Build SA. Deliberately NO secretAccessor,
+# so the only path to the secret remains "deploy a workload that runs AS ruhunu-core".
+# Without these the challenge is unsolvable (deploy fails with 403).
+step "h02: granting deploy permissions (no secret access)"
+for role in roles/cloudfunctions.developer roles/run.developer \
+            roles/cloudbuild.builds.editor roles/artifactregistry.writer roles/storage.admin; do
+  grant_project_role "$DEP_EMAIL" "$role"
+done
+PNUM="$(GC projects describe "$GCP_PROJECT_ID" --format='value(projectNumber)')"
+BUILD_SA="${PNUM}-compute@developer.gserviceaccount.com"
+grant_sa_impersonation "$BUILD_SA" "$DEP_EMAIL" roles/iam.serviceAccountUser   # actAs the build SA
+grant_project_role "$BUILD_SA" roles/cloudbuild.builds.builder                 # let the build run
+
 step "h02: exporting deployer key (challenge attachment)"
 [[ -f "$KEY_OUT" ]] && rm -f "$KEY_OUT"
 make_sa_key "$DEP_EMAIL" "$KEY_OUT"
