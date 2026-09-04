@@ -16,16 +16,22 @@ if gcloud --project "$GCP_PROJECT_ID" secrets versions access latest --secret="$
   echo "h02 healthcheck FAILED: deployer can read the secret directly (scope too broad)"; exit 1
 fi
 
-# 2) escalate: deploy a function that runs AS the runtime SA and prints the secret
+# 2) escalate: deploy a function that runs AS the runtime SA and prints the secret.
+# NOTE: the Cloud Functions Python runtime does NOT ship the gcloud CLI (shelling out
+# to it fails with FileNotFoundError) — use the Secret Manager client library instead,
+# which picks up the function's runtime SA via Application Default Credentials.
 mkdir -p "$TMP/fn"
 cat > "$TMP/fn/main.py" <<PY
-import functions_framework, subprocess
+import functions_framework
+from google.cloud import secretmanager
 @functions_framework.http
 def f(request):
-    return subprocess.check_output(
-        ["gcloud","secrets","versions","access","latest","--secret","$SECRET"])
+    client = secretmanager.SecretManagerServiceClient()
+    name = "projects/$GCP_PROJECT_ID/secrets/$SECRET/versions/latest"
+    resp = client.access_secret_version(request={"name": name})
+    return resp.payload.data.decode()
 PY
-echo "functions-framework==3.*" > "$TMP/fn/requirements.txt"
+printf 'functions-framework==3.*\ngoogle-cloud-secret-manager==2.*\n' > "$TMP/fn/requirements.txt"
 gcloud --project "$GCP_PROJECT_ID" functions deploy pwn --gen2 --region "$GCP_REGION" \
   --runtime python312 --trigger-http --allow-unauthenticated --entry-point f \
   --service-account "$CORE_EMAIL" --source "$TMP/fn" --quiet >/dev/null
