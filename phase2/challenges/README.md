@@ -43,6 +43,22 @@ Cloud: 7 · Web: 4 · Crypto: 3 · Rev: 1 · Pwn: 1 · Forensics: 2 · Container
 IDs are intentionally sparse (`m02`, `h04`, `h07`, `h09`, `h11`, `h13` were cut in the trim) — the
 numbering is kept stable from the design draft so cross-references don't shift.
 
+### AI Security bonus wave (ai1-ai3)
+
+Three additional AI/LLM-security challenges, added after the trim, run alongside the 20 above —
+not counted in the manifest/wave numbering. Each is a deterministic mock-LLM (regex-based, no
+real model API calls) and deploys as a **shared instance** (one container for every team, like
+e01/m01), not per-team whale:
+
+| ID | Challenge | Company | Category | Diff | Pts | Isolation |
+|----|-----------|---------|----------|------|-----|-----------|
+| ai1 | Serendib Support Bot | Ape Ride | AI / prompt injection | Intermediate | 300 | shared instance |
+| ai2 | Jailbreak the Concierge | Sethsuwa Health | AI / guardrail bypass | Hard | 400 | shared instance |
+| ai3 | The Model in the Middle | Pearl Telecom | AI / indirect injection, tool abuse | Insane | 500 | shared instance |
+
+Deployed via `phase2/challenges/ai{1,2,3}-*/provision.sh` (built by `build-images.sh`, verified
+by `verify-local.sh`), same pattern as i01/h01.
+
 ## Release waves (~5-hour active window, board frozen for the final 30 min)
 
 | Wave | Release T+ | Challenges |

@@ -30,8 +30,32 @@ WHALE="$REPO_ROOT/phase2/whale"
 # cloud/static/gke challenges have their own provision.sh (run it, capture CONNECT).
 # whale challenges are container images spawned per-team (no provision.sh; flag via whale).
 GKE_IDS="h03-off-the-node i05-namespace-nomad"
-WHALE_IDS="e02-client-side-story i02-entity-crisis m03-echo-chamber h06-render-unto-ceylon h08-polluted-pearls h10-once-is-enough h16-overboard-again"
+# NOT ctfd-whale (that plumbing was never finished) — deployed as SHARED single instances
+# on the platform VM instead, via phase2/run-shared.sh (already running; see its PORTS map).
+# Kept per-challenge-unique flags where each has its own provision.sh (ai1/ai2/ai3); the
+# run-shared.sh set (e02/i02/m03/h06/h08/h10/i04) has ONE flag shared by all teams — a known,
+# accepted tradeoff for this event (see phase2/SECURITY.md's anti-cheat note).
+SHARED_IDS="e02-client-side-story i02-entity-crisis m03-echo-chamber h06-render-unto-ceylon h08-polluted-pearls h10-once-is-enough i04-return-to-sender"
+# NOT deployed anywhere yet — needs a nested throwaway sandbox per SECURITY.md §5 before it can
+# run at all (a direct escape would land as root on the finals VM). Skipped, not loaded.
+PENDING_IDS="h16-overboard-again"
 CLOUD_IDS="e01-bucket-list m01-overshared h05-state-of-affairs h02-deploy-your-privilege h01-token-relay i01-metadata-skim"
+
+# shared_connect <cid> -> connection_info for the already-running phase2/run-shared.sh
+# instances (fixed host ports on cypher-phase2 — see that script's PORTS map).
+shared_connect() {
+  local ip; ip="$(vm_ip cypher-phase2 2>/dev/null || echo '<phase2-vm-ip>')"
+  case "$1" in
+    e02-client-side-story)    printf 'http://%s:8002/' "$ip" ;;
+    i02-entity-crisis)        printf 'http://%s:8003/' "$ip" ;;
+    m03-echo-chamber)         printf 'http://%s:8004/' "$ip" ;;
+    h06-render-unto-ceylon)   printf 'http://%s:8006/' "$ip" ;;
+    h08-polluted-pearls)      printf 'http://%s:8008/' "$ip" ;;
+    h10-once-is-enough)       printf 'http://%s:8010/' "$ip" ;;
+    i04-return-to-sender)     printf 'nc %s 8014' "$ip" ;;
+    *)                        printf '' ;;
+  esac
+}
 
 # When cloud resources are already provisioned (e.g. from a workstation with IAM
 # admin), PHASE2_SKIP_CLOUD=1 loads the cloud challenges with their registered
@@ -43,8 +67,8 @@ cloud_connect() {  # cid -> connection_info string
     m01-overshared)           printf 'gs://%s-ck-recon  (readable by any authenticated Google account)' "$p" ;;
     h05-state-of-affairs)     printf 'gs://%s-lankagov-ci-state/terraform.tfstate  (public)' "$p" ;;
     h02-deploy-your-privilege) printf 'Activate deployer-sa-key.json; deploy a function as ruhunu-core@%s.iam.gserviceaccount.com to read secret ruhunu-crownjewels' "$p" ;;
-    i01-metadata-skim)        printf 'http://<i01-vm>:8101/  (SSRF previewer on its dedicated scoped-SA VM)' ;;
-    h01-token-relay)          printf 'http://<h01-vm>:8001/  (semi-blind SSRF on its dedicated scoped-SA VM)' ;;
+    i01-metadata-skim)        printf 'http://%s:8101/  (SSRF previewer on its dedicated scoped-SA VM)' "$(vm_ip cypher-i01 2>/dev/null || echo '<i01-vm>')" ;;
+    h01-token-relay)          printf 'http://%s:8001/  (semi-blind SSRF on its dedicated scoped-SA VM)' "$(vm_ip cypher-h01 2>/dev/null || echo '<h01-vm>')" ;;
     *)                        printf '' ;;
   esac
 }
@@ -102,14 +126,19 @@ for dir in "$CH"/*/; do
   if [[ " $GKE_IDS " == *" $cid "* && "${PHASE2_GKE:-0}" != "1" ]]; then
     warn "skipping $cid (GKE; set PHASE2_GKE=1 to enable)"; continue
   fi
+  # skip challenges with no live infra yet (not loaded into CTFd until they are)
+  if [[ " $PENDING_IDS " == *" $cid "* ]]; then
+    warn "skipping $cid (no live infra yet — see SECURITY.md for what's needed)"; continue
+  fi
   flag="$(flag_for "$cid")"; connect=""
   if [[ " $CLOUD_IDS " == *" $cid "* && "${PHASE2_SKIP_CLOUD:-0}" == "1" ]]; then
     connect="$(cloud_connect "$cid")"                       # already provisioned elsewhere
     ok "$cid: using pre-provisioned cloud resources (skip)"
   elif [[ -f "$dir/provision.sh" ]]; then
     connect="$(CHAL_FLAG="$flag" bash "$dir/provision.sh" 2>&1 | tee /dev/stderr | capture_connect || true)"
-  elif [[ " $WHALE_IDS " == *" $cid "* ]]; then
-    connect="Per-team instance — click 'Launch' (ctfd-whale). Flag is unique per team."
+  elif [[ " $SHARED_IDS " == *" $cid "* ]]; then
+    connect="$(shared_connect "$cid")"     # already running via phase2/run-shared.sh
+    ok "$cid: using pre-running shared instance (skip)"
   fi
   render_and_sync "$dir" "$flag" "$connect"
 done
@@ -125,9 +154,9 @@ cat <<EOF
   Finals VM IP : $VM_IP
 
 Next:
-  1. Configure ctfd-whale (Admin -> Plugins -> Whale) per phase2/whale/WHALE.md,
-     then register each whale challenge (dynamic_docker) with its image + limits.
-  2. Deploy i01/h01 on dedicated scoped-SA VMs (WHALE.md) and set their connection_info.
-  3. Verify solve paths:  ./phase2/verify.sh   (cloud/static live; whale via the UI)
-  4. Restrict the firewall to the venue CIDR before go-live (phase2/SECURITY.md §7).
+  1. h16 is NOT loaded (no live infra — needs a nested sandbox, SECURITY.md §5). Decide:
+     drop it from this event, or stand up the nested sandbox before go-live.
+  2. Verify solve paths:  ./phase2/verify.sh   and  ./phase2/challenges/verify-local.sh
+  3. Firewall is currently 0.0.0.0/0 on the participant-facing rules — restrict to the
+     venue CIDR before go-live if that's still wanted (phase2/SECURITY.md §7).
 EOF

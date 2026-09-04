@@ -47,3 +47,17 @@ Deploy: create a small VM per challenge (or per team for true isolation), attach
 (`--service-account`), run the image (`cypher-p2/i01` / `cypher-p2/h01`) with `FLAG` unset
 (the flag is read from the scoped resource, not the app). Point the CTFd challenge's
 `connection_info` at `http://<that-vm-ip>:<port>/`.
+
+## NOT whale either — shared instances on the platform VM (ai1, ai2, ai3)
+
+The three AI-security challenges are deterministic mock-LLMs (regex-based, no real model API
+calls, no per-request state) — one shared container per challenge serves every team, same as
+e01/m01 conceptually but backed by an actual app instead of a bare cloud resource. Each has
+its own `provision.sh` (mirroring i01/h01's shape) that `docker run`s the image directly on
+`cypher-phase2` with the §1 hard limits, on a fixed port, and prints `CONNECT=`:
+
+| ID | Image | Port | mem_limit | cpu | pids |
+|----|-------|------|-----------|-----|------|
+| ai1 | `cypher-p2/ai1:latest` | 8020 | 256m | 0.5 | 128 |
+| ai2 | `cypher-p2/ai2:latest` | 8021 | 256m | 0.5 | 128 |
+| ai3 | `cypher-p2/ai3:latest` | 8022 | 256m | 0.5 | 128 |

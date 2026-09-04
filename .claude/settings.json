@@ -51,7 +51,19 @@
       "Bash(timeout 60 gcloud compute scp phase2/run-shared.sh cypher-phase2:~/cypher/phase2/run-shared.sh --project cypher-p1 --zone asia-south1-a --scp-flag=-o --scp-flag=StrictHostKeyChecking=no)",
       "Bash(timeout 500 gcloud compute ssh cypher-phase2 --project cypher-p1 --zone asia-south1-a --command 'cd ~/cypher *)",
       "Bash(timeout 120 gcloud compute ssh cypher-phase2 --project cypher-p1 --zone asia-south1-a --command 'cd ~/cypher *)",
-      "Bash(timeout 560 gcloud compute ssh cypher-phase2 --project cypher-p1 --zone asia-south1-a --command 'cd ~/cypher *)"
+      "Bash(timeout 560 gcloud compute ssh cypher-phase2 --project cypher-p1 --zone asia-south1-a --command 'cd ~/cypher *)",
+      "Bash(timeout 60 gcloud compute ssh cypher-phase2 --zone=asia-south1-a --project=cypher-p1 --tunnel-through-iap '--command= *)",
+      "Bash(timeout 40 gcloud compute ssh cypher-phase2 --zone=asia-south1-a --project=cypher-p1 --tunnel-through-iap '--command= *)",
+      "Bash(timeout 40 gcloud compute ssh cypher-platform --zone=asia-south1-a --project=cypher-p1 --tunnel-through-iap '--command= *)",
+      "Bash(timeout 40 gcloud compute ssh cypher-platform --zone=asia-south1-a --project=cypher-p1 --tunnel-through-iap --command=\"cat ~/cypher/.env 2>/dev/null | grep -v '^#'\")",
+      "Bash(curl -s -m 10 -o /dev/null -w \"https://ctfd.cypher4.gdgsrilanka.org -> %{http_code}\\\\n\" https://ctfd.cypher4.gdgsrilanka.org/)",
+      "Bash(curl -s -m 10 https://ctfd.cypher4.gdgsrilanka.org/api/v1/challenges)",
+      "Bash(curl -s -m 10 https://ctfd.cypher4.gdgsrilanka.org/)",
+      "Bash(nslookup ctfd.cypher4.gdgsrilanka.org)",
+      "Bash(host ctfd.cypher4.gdgsrilanka.org)",
+      "Bash(curl -v -m 10 https://ctfd.cypher4.gdgsrilanka.org/)",
+      "Bash(gsutil ls *)",
+      "Bash(gcloud secrets *)"
     ],
     "additionalDirectories": [
       "/tmp"

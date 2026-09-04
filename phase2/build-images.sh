@@ -25,6 +25,11 @@ declare -A IMG=(
   # but their images are built here too for that deploy:
   [i01]=i01-metadata-skim
   [h01]=h01-token-relay
+  # ai1/ai2/ai3 are shared instances (one container each, run once on the platform VM via
+  # their own provision.sh) — not whale, not per-VM, but built here like i01/h01:
+  [ai1]=ai1-serendib-support-bot
+  [ai2]=ai2-jailbreak-concierge
+  [ai3]=ai3-model-in-the-middle
 )
 
 ids=("$@"); [ ${#ids[@]} -eq 0 ] && ids=("${!IMG[@]}")
