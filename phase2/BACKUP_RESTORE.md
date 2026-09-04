@@ -78,13 +78,28 @@ should be disabled instead:
 gcloud compute ssh <vm> --zone=asia-south1-a --project=cypher-p1 --tunnel-through-iap \
   --command="sudo systemctl disable --now cypher-ratelimit.service; sudo iptables -D DOCKER-USER -p tcp --dport <port> -m conntrack --ctstate NEW -m hashlimit --hashlimit-name cypher_dos --hashlimit-mode srcip --hashlimit-above 50/sec --hashlimit-burst 100 -j DROP"
 ```
-Threshold was chosen with real headroom over legitimate use and live-tested on
-`cypher-phase2`: 30 rapid sequential requests all passed clean; a 250-connection
-parallel flood got ~35% dropped (rule engaging correctly) while the rest still got
-through; service recovered instantly once the flood stopped. Not tested against a
-sustained multi-minute flood — the assumption is the per-container resource limits
-(`SECURITY.md` §1) plus this connection cap are enough to keep one bad actor from
-starving the other nine teams, not that either is bulletproof.
+Threshold was chosen with real headroom over legitimate use and live-tested twice on
+`cypher-phase2`:
+- **Quick burst**: 30 rapid sequential requests all passed clean; a 250-connection
+  parallel burst got ~35% dropped (rule engaging correctly) while the rest still got
+  through; service recovered within seconds.
+- **Sustained 45s flood** (continuous 40-way parallel requests against h08, single
+  source IP): drop counter climbed from 227 to 603+ packets during the flood, host load
+  average stayed at **0.00** the entire time (8-vCPU box never noticed), every *other*
+  container stayed under 0.1% CPU, and h08 itself — the actual target — stayed at ~2%
+  CPU and kept answering individual legitimate probes with 200 throughout. The flooding
+  IP (mine) then hit a several-second cooldown lockout immediately after the flood
+  ended — the rule tracks sustained abuse, not just instantaneous bursts, so a real
+  single-IP flood gets *increasingly* penalized the longer it persists. Full recovery
+  confirmed within under a minute; zero impact on any other container or on `h01`/`i01`,
+  which weren't targeted.
+
+Net: the per-container resource limits (`SECURITY.md` §1) and this connection cap
+combine to make a single-source flood a non-event for the other nine teams — verified,
+not assumed. What's still untested: a distributed flood from many source IPs at once
+(the rate limit is per-source-IP by design, so it doesn't defend against that shape of
+attack — only the per-container resource caps would, by starving each individual
+connection's container of CPU rather than blocking the connection itself).
 
 ## Backups (GCE machine images)
 
