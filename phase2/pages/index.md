@@ -78,6 +78,11 @@ access.
 **A team found doing this will be disqualified.** Solve the challenges, not the
 scoreboard.
 
+Automatic per-team connection-rate limiting is in place platform-wide. Some challenges
+legitimately need a solve script that sends many requests - that's fine and well within
+the limit. What isn't fine is deliberately flooding a service; the limit exists to
+protect everyone's access, not to slow down normal solving.
+
 ---
 
 ## Getting started
