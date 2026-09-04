@@ -68,7 +68,17 @@
       "Bash(curl -sI -m 5 http://34.47.134.78:8001/)",
       "Bash(timeout 40 gcloud compute ssh cypher-h01 --zone=asia-south1-a --project=cypher-p1 --tunnel-through-iap '--command= *)",
       "Bash(timeout 40 gcloud compute ssh cypher-h01 --zone=asia-south1-a --project=cypher-p1 --tunnel-through-iap --command=\"sudo docker inspect h01app --format '{{range .Config.Env}}{{println .}}{{end}}'\")",
-      "Bash(timeout 40 gcloud compute ssh cypher-i01 --zone=asia-south1-a --project=cypher-p1 --tunnel-through-iap --command=\"sudo docker inspect i01app --format '{{range .Config.Env}}{{println .}}{{end}}'\")"
+      "Bash(timeout 40 gcloud compute ssh cypher-i01 --zone=asia-south1-a --project=cypher-p1 --tunnel-through-iap --command=\"sudo docker inspect i01app --format '{{range .Config.Env}}{{println .}}{{end}}'\")",
+      "Bash(xargs -I{} echo {})",
+      "Bash(objdump -d return-to-sender)",
+      "Bash(awk '/\\\\tret[[:space:]]*$/{print; exit}')",
+      "Bash(readelf -h return-to-sender)",
+      "Bash(readelf -d return-to-sender)",
+      "Bash(TARGET=\"http://34.14.164.225:8006\" CHAL_FLAG=\"CYPHER{h06_render_unto_ceylon_b16d6525}\" bash phase2/challenges/h06-render-unto-ceylon/healthcheck.sh)",
+      "Bash(TARGET=\"http://34.14.164.225:8008\" CHAL_FLAG=\"CYPHER{h08_polluted_pearls_9b7f0d38}\" bash phase2/challenges/h08-polluted-pearls/healthcheck.sh)",
+      "Bash(TARGET=\"http://34.14.164.225:8020\" CHAL_FLAG=\"CYPHER{ai1_serendib_support_bot_c73b02d5}\" bash phase2/challenges/ai1-serendib-support-bot/healthcheck.sh)",
+      "Bash(TARGET=\"http://34.14.164.225:8021\" CHAL_FLAG=\"CYPHER{ai2_jailbreak_concierge_b096b3a0}\" bash phase2/challenges/ai2-jailbreak-concierge/healthcheck.sh)",
+      "Bash(TARGET=\"http://34.14.164.225:8022\" CHAL_FLAG=\"CYPHER{ai3_model_in_the_middle_5ef071d2}\" bash phase2/challenges/ai3-model-in-the-middle/healthcheck.sh)"
     ],
     "additionalDirectories": [
       "/tmp"
