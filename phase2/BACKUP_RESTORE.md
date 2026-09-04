@@ -40,17 +40,67 @@ keeps the exact address every `connection_info` / `SOLUTIONS.md` entry already p
 | `cypher-i01` (Metadata Skim SSRF) | `34.47.134.78` | `cypher-i01-ip` |
 | `cypher-platform` (CTFd, via Cloudflare Tunnel) | `8.231.71.161` | `cypher-platform-ip` |
 
+**Reboot-tested, not just configured.** Actually reset `cypher-phase2`
+(`gcloud compute instances reset cypher-phase2 --zone=asia-south1-a --project=cypher-p1`)
+and confirmed live: SSH back in ~20s, Docker active, all 10 containers back up on their
+own within 15s, `cypher-metadata-block.service` reapplied the rule, and all endpoints
+verified reachable again externally. The auto-start story above is proven, not assumed.
+
+## Monitoring & DoS protection (2026-09-04)
+
+**Firewall visibility**: rule logging is on for every participant-facing and admin
+firewall rule (`cypher-allow-web`, `cypher-allow-challenges`, `cypher-allow-whale`,
+`cypher-allow-ssh-admin`, `cypher-allow-ssh-iap`). VPC Flow Logs are on for
+`cypher-subnet` (50% sampling, 5s aggregation). Both land in Cloud Logging —
+`gcloud logging read "resource.type=gce_subnetwork" --project=cypher-p1 --limit=50`
+for flow logs, or filter on `jsonPayload.connection` for firewall hits.
+
+**Alerting**: two Cloud Monitoring policies, emailing `suresh@gdgsrilanka.org`, watching
+`cypher-phase2`/`cypher-h01`/`cypher-i01`:
+- CPU > 85% sustained 5 minutes ("Phase2 - High CPU (possible DoS/abuse)")
+- Inbound traffic spike, sustained 3 minutes ("Phase2 - Abnormal inbound traffic
+  (possible flood)")
+
+Check firing/history: `gcloud alpha monitoring policies list --project=cypher-p1`.
+
+**Active rate limiting**: per-source-IP connection-rate limit on the challenge ports of
+all three internet-facing VMs, via a systemd-persisted iptables rule (same pattern as
+the metadata-block rule):
+```
+/etc/systemd/system/cypher-ratelimit.service
+```
+Drops **new** TCP connections from a single source IP once it exceeds **50/sec (burst
+100)** on `cypher-phase2:8000-8099` and `cypher-h01`/`cypher-i01:8001`. This assumes
+**each team has a distinct public IP at the venue** — if that's not true on the day
+(everyone behind one shared NAT), this would rate-limit the whole room as one source and
+should be disabled instead:
+```sh
+gcloud compute ssh <vm> --zone=asia-south1-a --project=cypher-p1 --tunnel-through-iap \
+  --command="sudo systemctl disable --now cypher-ratelimit.service; sudo iptables -D DOCKER-USER -p tcp --dport <port> -m conntrack --ctstate NEW -m hashlimit --hashlimit-name cypher_dos --hashlimit-mode srcip --hashlimit-above 50/sec --hashlimit-burst 100 -j DROP"
+```
+Threshold was chosen with real headroom over legitimate use and live-tested on
+`cypher-phase2`: 30 rapid sequential requests all passed clean; a 250-connection
+parallel flood got ~35% dropped (rule engaging correctly) while the rest still got
+through; service recovered instantly once the flood stopped. Not tested against a
+sustained multi-minute flood — the assumption is the per-container resource limits
+(`SECURITY.md` §1) plus this connection cap are enough to keep one bad actor from
+starving the other nine teams, not that either is bulletproof.
+
 ## Backups (GCE machine images)
 
 A machine image is a point-in-time snapshot of the **entire VM** (boot disk + config) —
 one command recreates a fully working instance from it, no manual disk-swapping.
 
-| VM | Machine image | Taken |
-|---|---|---|
-| `cypher-phase2` | `cypher-phase2-bak-20260904` | 2026-09-04 ~20:45 SLT |
-| `cypher-h01` | `cypher-h01-bak-20260904` | 2026-09-04 ~20:45 SLT |
-| `cypher-i01` | `cypher-i01-bak-20260904` | 2026-09-04 ~20:45 SLT |
-| `cypher-platform` | `cypher-platform-bak-20260904` | 2026-09-04 ~20:45 SLT |
+| VM | Current machine image | Taken | Superseded |
+|---|---|---|---|
+| `cypher-phase2` | `cypher-phase2-bak-20260904b` | 2026-09-04, post-hardening | `cypher-phase2-bak-20260904` (pre monitoring/rate-limit) |
+| `cypher-h01` | `cypher-h01-bak-20260904b` | 2026-09-04, post-hardening | `cypher-h01-bak-20260904` |
+| `cypher-i01` | `cypher-i01-bak-20260904b` | 2026-09-04, post-hardening | `cypher-i01-bak-20260904` |
+| `cypher-platform` | `cypher-platform-bak-20260904` | 2026-09-04 ~20:45 SLT | (unchanged since) |
+
+Use the `b` images for restores — they include the metadata block, static IPs already
+being moot (address is separate from the image), and the rate-limit/monitoring setup
+from this section. The pre-hardening images are kept only as a fallback, not preferred.
 
 ```sh
 gcloud compute machine-images list --project=cypher-p1
@@ -83,11 +133,12 @@ Reuses the same static IP, so nothing downstream (CTFd `connection_info`,
 gcloud compute instances delete <vm-name> --zone=asia-south1-a --project=cypher-p1 --quiet
 
 gcloud compute instances create <vm-name> \
-  --source-machine-image=<vm-name>-bak-20260904 \
+  --source-machine-image=<vm-name>-bak-20260904b \
   --zone=asia-south1-a --address=<vm-name>-ip --project=cypher-p1
 ```
-Substitute the VM name (`cypher-phase2` / `cypher-h01` / `cypher-i01` / `cypher-platform`)
-in all three places. After it boots, confirm services are back:
+Substitute the VM name (`cypher-phase2` / `cypher-h01` / `cypher-i01`; use
+`cypher-platform-bak-20260904`, no `b` suffix, for that one) in all three places. After
+it boots, confirm services are back:
 ```sh
 curl -s -o /dev/null -w '%{http_code}\n' http://<static-ip>:<port>/   # per phase2/SOLUTIONS.md's endpoint table
 ```
