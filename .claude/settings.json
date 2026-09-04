@@ -78,7 +78,8 @@
       "Bash(TARGET=\"http://34.14.164.225:8008\" CHAL_FLAG=\"CYPHER{h08_polluted_pearls_9b7f0d38}\" bash phase2/challenges/h08-polluted-pearls/healthcheck.sh)",
       "Bash(TARGET=\"http://34.14.164.225:8020\" CHAL_FLAG=\"CYPHER{ai1_serendib_support_bot_c73b02d5}\" bash phase2/challenges/ai1-serendib-support-bot/healthcheck.sh)",
       "Bash(TARGET=\"http://34.14.164.225:8021\" CHAL_FLAG=\"CYPHER{ai2_jailbreak_concierge_b096b3a0}\" bash phase2/challenges/ai2-jailbreak-concierge/healthcheck.sh)",
-      "Bash(TARGET=\"http://34.14.164.225:8022\" CHAL_FLAG=\"CYPHER{ai3_model_in_the_middle_5ef071d2}\" bash phase2/challenges/ai3-model-in-the-middle/healthcheck.sh)"
+      "Bash(TARGET=\"http://34.14.164.225:8022\" CHAL_FLAG=\"CYPHER{ai3_model_in_the_middle_5ef071d2}\" bash phase2/challenges/ai3-model-in-the-middle/healthcheck.sh)",
+      "Bash(curl -s -H 'Authorization: Token __CMDSUB_OUTPUT__' https://cypher4.gdgsrilanka.org/api/v1/challenges?view=admin)"
     ],
     "additionalDirectories": [
       "/tmp"
