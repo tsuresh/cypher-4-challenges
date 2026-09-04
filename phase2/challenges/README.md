@@ -1,16 +1,17 @@
 # Phase 2 — Finals Challenge Pool ("Serendib Shield: Hard Track")
 
-> **Status:** challenge **specs** (README + `challenge.yml`) authored here manually.
-> Infra (Dockerfiles / `provision.sh` / `healthcheck.sh` / per-team whale images) is the **next**
-> deliverable — each `challenge.yml` already carries `__FLAG__` / `__CONNECT__` placeholders so
-> `shared/lib/render.sh` + ctfcli load them exactly like Phase 1.
+> **Status:** built, deployed, and live-verified. All 20 challenges below (minus h03/i05/h16,
+> see `../SECURITY.md`) are running on the finals infra and were solved end-to-end against the
+> real deployment with real registered flags on 2026-09-04. Full walkthroughs and the current
+> live endpoint table live in `../SOLUTIONS.md` (gitignored, organizer-only).
 
 A **flat pool of 20 hard, independent challenges** for the onsite finals (live, ~5 hours, ~10
 teams of 4), released in **timed waves**, with **very limited hints**. This supersedes the
 accessible chained mission in
-[../../CYPHER4_Phase2_Operation_Serendib_Shield.md](../../CYPHER4_Phase2_Operation_Serendib_Shield.md);
-the empty `phase2/{mission,standalone,whale}/` scaffolds are left untouched. Full rationale and
-the trim/de-risk history: `~/.claude/plans/need-to-prepare-some-sparkling-heron.md`.
+[../../CYPHER4_Phase2_Operation_Serendib_Shield.md](../../CYPHER4_Phase2_Operation_Serendib_Shield.md).
+`phase2/whale/` (ctfd-whale + frp, real per-team isolation) was built but not used for this
+deploy — see `../run-shared.sh` for what actually runs instead. The old `mission/`/`standalone/`
+scaffolds from the superseded chained-mission design have been removed.
 
 ## Manifest (2 Easy · 2 Medium · 5 Intermediate · 6 Hard · 5 Insane)
 
