@@ -67,7 +67,7 @@ cloud_connect() {  # cid -> connection_info string
     m01-overshared)           printf 'gs://%s-ck-recon  (readable by any authenticated Google account)' "$p" ;;
     h05-state-of-affairs)     printf 'gs://%s-lankagov-ci-state/terraform.tfstate  (public)' "$p" ;;
     h02-deploy-your-privilege) printf 'Activate deployer-sa-key.json; deploy a function as ruhunu-core@%s.iam.gserviceaccount.com to read secret ruhunu-crownjewels' "$p" ;;
-    i01-metadata-skim)        printf 'http://%s:8101/  (SSRF previewer on its dedicated scoped-SA VM)' "$(vm_ip cypher-i01 2>/dev/null || echo '<i01-vm>')" ;;
+    i01-metadata-skim)        printf 'http://%s:8001/  (SSRF previewer on its dedicated scoped-SA VM)' "$(vm_ip cypher-i01 2>/dev/null || echo '<i01-vm>')" ;;
     h01-token-relay)          printf 'http://%s:8001/  (semi-blind SSRF on its dedicated scoped-SA VM)' "$(vm_ip cypher-h01 2>/dev/null || echo '<h01-vm>')" ;;
     *)                        printf '' ;;
   esac

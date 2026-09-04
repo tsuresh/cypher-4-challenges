@@ -63,7 +63,12 @@
       "Bash(host ctfd.cypher4.gdgsrilanka.org)",
       "Bash(curl -v -m 10 https://ctfd.cypher4.gdgsrilanka.org/)",
       "Bash(gsutil ls *)",
-      "Bash(gcloud secrets *)"
+      "Bash(gcloud secrets *)",
+      "Bash(curl -s -m 5 http://34.47.134.78:8001/)",
+      "Bash(curl -sI -m 5 http://34.47.134.78:8001/)",
+      "Bash(timeout 40 gcloud compute ssh cypher-h01 --zone=asia-south1-a --project=cypher-p1 --tunnel-through-iap '--command= *)",
+      "Bash(timeout 40 gcloud compute ssh cypher-h01 --zone=asia-south1-a --project=cypher-p1 --tunnel-through-iap --command=\"sudo docker inspect h01app --format '{{range .Config.Env}}{{println .}}{{end}}'\")",
+      "Bash(timeout 40 gcloud compute ssh cypher-i01 --zone=asia-south1-a --project=cypher-p1 --tunnel-through-iap --command=\"sudo docker inspect i01app --format '{{range .Config.Env}}{{println .}}{{end}}'\")"
     ],
     "additionalDirectories": [
       "/tmp"
